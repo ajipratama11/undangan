@@ -21,6 +21,7 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- FIREBASE CONFIGURATION & LOGIC ---
+        // PANDUAN: Config ini akan otomatis menggunakan data dari script id="firebase-config" di bawah
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : document.getElementById('firebase-config').textContent);
         const appId = typeof __app_id !== 'undefined' ? __app_id : document.getElementById('app-id').textContent;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -138,17 +139,21 @@
         }
     </script>
 
+    <!-- 
+      PENTING: Ganti isi di bawah ini dengan konfigurasi Firebase Anda sendiri.
+      Lihat file panduan_firebase.md untuk caranya.
+    -->
     <script type="application/json" id="firebase-config">
         {
-            "apiKey": "", 
-            "authDomain": "simulated-env.firebaseapp.com", 
-            "projectId": "simulated-env", 
-            "storageBucket": "simulated-env.appspot.com", 
-            "messagingSenderId": "000000000000", 
-            "appId": "1:000000000000:web:0000000000000000000000"
+            "apiKey": "AIzaSyBa9gVEId5i-ZZGiCLSLbyTaCfoG1DVYok", 
+            "authDomain": "undangan-aji-yesi.firebaseapp.com", 
+            "projectId": "undangan-aji-yesi", 
+            "storageBucket": "undangan-aji-yesi.firebasestorage.app", 
+            "messagingSenderId": "1000413987130", 
+            "appId": "1:1000413987130:web:91379023bf32749cee5003"
         }
     </script>
-    <script type="txt" id="app-id">wedding-insta-v3-3d</script>
+    <script type="txt" id="app-id">undangan-nikah-aji-yesi</script>
 
     <style>
         :root {
@@ -707,6 +712,22 @@
             <!-- Details -->
             <div class="p-6 bg-black text-center">
                 <h3 class="font-script text-4xl text-white mb-6">Selasa, 20 Oktober 2026</h3>
+                
+                <!-- NEW TEXT SECTION ADDED HERE AS REQUESTED -->
+                <div class="mb-8 px-2">
+                    <div class="flex justify-center mb-4">
+                         <!-- Decorative Icon resembling gunungan feeling -->
+                         <div class="w-12 h-12 rounded-full border border-yellow-600 flex items-center justify-center bg-gray-900">
+                             <i class="fas fa-praying-hands text-yellow-500 text-xl"></i>
+                         </div>
+                    </div>
+                    <p class="font-serif italic text-gray-300 leading-loose text-sm tracking-wide">
+                        "Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir untuk memberikan doa restu kepada kedua mempelai"
+                    </p>
+                    <div class="w-24 h-px bg-gradient-to-r from-transparent via-green-500 to-transparent mx-auto mt-6"></div>
+                </div>
+                <!-- END NEW TEXT SECTION -->
+
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div class="bg-gray-900 p-4 rounded-lg border border-gray-800 hover:border-green-500 transition-colors">
                         <i class="fas fa-ring text-green-500 mb-2 text-xl"></i>
@@ -1417,4 +1438,3 @@
     </script>
 </body>
 </html>
-
