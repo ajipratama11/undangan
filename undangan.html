@@ -1,1455 +1,2366 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>The Wedding: Aji & Yesi</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@300;400;500;700&family=Great+Vibes&family=Cinzel:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@300;400;500;700&family=Great+Vibes&family=Cinzel:wght@400;700&family=Orbitron:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        onSnapshot,
+        query,
+        orderBy,
+        serverTimestamp,
+        setLogLevel,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- FIREBASE CONFIGURATION & LOGIC ---
-        // PANDUAN: Config ini akan otomatis menggunakan data dari script id="firebase-config" di bawah
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : document.getElementById('firebase-config').textContent);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : document.getElementById('app-id').textContent;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        let currentUser = null;
+      // --- FIREBASE CONFIGURATION & LOGIC ---
+      const firebaseConfig = JSON.parse(
+        typeof __firebase_config !== "undefined"
+          ? __firebase_config
+          : document.getElementById("firebase-config").textContent
+      );
+      const appId =
+        typeof __app_id !== "undefined"
+          ? __app_id
+          : document.getElementById("app-id").textContent;
+      const initialAuthToken =
+        typeof __initial_auth_token !== "undefined"
+          ? __initial_auth_token
+          : null;
 
-        async function initAuth() {
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("FIREBASE AUTH ERROR:", error);
-            }
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      let currentUser = null;
+
+      async function initAuth() {
+        try {
+          if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+          } else {
+            await signInAnonymously(auth);
+          }
+        } catch (error) {
+          console.error("FIREBASE AUTH ERROR:", error);
         }
+      }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                loadComments();
-            } else {
-                currentUser = null;
-            }
-        });
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+          loadComments();
+        } else {
+          currentUser = null;
+        }
+      });
 
-        initAuth();
+      initAuth();
 
-        const COMMENTS_COLLECTION = `artifacts/${appId}/public/data/wedding_wishes`;
+      const COMMENTS_COLLECTION = `artifacts/${appId}/public/data/wedding_wishes`;
 
-        function loadComments() {
-            if (!currentUser || !db) return;
+      function loadComments() {
+        if (!currentUser || !db) return;
 
-            const q = query(collection(db, COMMENTS_COLLECTION), orderBy('timestamp', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                const commentList = document.getElementById('comment-list');
-                const commentCount = document.getElementById('comment-count');
-                
-                if(!commentList) return;
-                
-                commentList.innerHTML = '';
-                if(commentCount) commentCount.innerText = `View all ${snapshot.docs.length} wishes`;
+        const q = query(
+          collection(db, COMMENTS_COLLECTION),
+          orderBy("timestamp", "desc")
+        );
 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = "flex space-x-2 mb-3 items-start animate-slide-in";
-                    
-                    const timeAgo = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja';
-                    const initial = data.name ? escapeHtml(data.name).charAt(0).toUpperCase() : '?';
+        onSnapshot(
+          q,
+          (snapshot) => {
+            const commentList = document.getElementById("comment-list");
+            const commentCount = document.getElementById("comment-count");
 
-                    div.innerHTML = `
+            if (!commentList) return;
+
+            commentList.innerHTML = "";
+            if (commentCount)
+              commentCount.innerText = `View all ${snapshot.docs.length} wishes`;
+
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              const div = document.createElement("div");
+              div.className =
+                "flex space-x-2 mb-3 items-start animate-slide-in";
+
+              const timeAgo = data.timestamp
+                ? new Date(data.timestamp.toDate()).toLocaleTimeString(
+                    "id-ID",
+                    { hour: "2-digit", minute: "2-digit" }
+                  )
+                : "Baru saja";
+              const initial = data.name
+                ? escapeHtml(data.name).charAt(0).toUpperCase()
+                : "?";
+
+              div.innerHTML = `
                         <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-green-500 to-yellow-500 flex items-center justify-center text-xs font-bold text-black shrink-0 shadow-lg border border-gray-700">
                             ${initial}
                         </div>
                         <div class="flex-1 bg-gray-900 bg-opacity-60 p-2 rounded-lg border border-gray-800">
                             <p class="text-sm">
-                                <span class="font-bold text-white mr-1">${escapeHtml(data.name)}</span>
-                                <span class="text-gray-300 font-mono text-xs block mt-1">${escapeHtml(data.message)}</span>
+                                <span class="font-bold text-white mr-1">${escapeHtml(
+                                  data.name
+                                )}</span>
+                                <span class="text-gray-300 font-mono text-xs block mt-1">${escapeHtml(
+                                  data.message
+                                )}</span>
                             </p>
                             <div class="flex items-center space-x-3 mt-2 text-[10px] text-gray-500 border-t border-gray-800 pt-1">
-                                <span class="${data.attendance === 'Hadir' ? 'text-green-500' : 'text-red-500'} font-bold">${escapeHtml(data.attendance)}</span>
+                                <span class="${
+                                  data.attendance === "Hadir"
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                } font-bold">${escapeHtml(
+                data.attendance
+              )}</span>
                                 <span class="text-gray-600 ml-auto">${timeAgo}</span>
                             </div>
                         </div>
                     `;
-                    commentList.appendChild(div);
-                });
-            }, (error) => {
-                console.error("Error fetching comments:", error);
+              commentList.appendChild(div);
             });
+          },
+          (error) => {
+            console.error("Error fetching comments:", error);
+          }
+        );
+      }
+
+      window.handlePostComment = async function (event) {
+        event.preventDefault();
+        const nameInput = document.getElementById("input-name");
+        const msgInput = document.getElementById("input-message");
+        const attendanceInput = document.getElementById("input-attendance");
+        const btn = document.getElementById("btn-post");
+
+        if (!nameInput.value || !msgInput.value) return;
+        if (!currentUser) return;
+
+        const originalBtnText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        try {
+          await addDoc(collection(db, COMMENTS_COLLECTION), {
+            name: nameInput.value,
+            message: msgInput.value,
+            attendance: attendanceInput.value,
+            timestamp: serverTimestamp(),
+            userId: currentUser.uid,
+          });
+          msgInput.value = "";
+        } catch (error) {
+          console.error("FIREBASE POST ERROR:", error);
+          alert("Gagal mengirim ucapan. Silakan coba lagi.");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = originalBtnText;
         }
+      };
 
-        window.handlePostComment = async function(event) {
-            event.preventDefault();
-            const nameInput = document.getElementById('input-name');
-            const msgInput = document.getElementById('input-message');
-            const attendanceInput = document.getElementById('input-attendance');
-            const btn = document.getElementById('btn-post');
-
-            if (!nameInput.value || !msgInput.value) return;
-            if (!currentUser) return;
-
-            const originalBtnText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-            try {
-                await addDoc(collection(db, COMMENTS_COLLECTION), {
-                    name: nameInput.value,
-                    message: msgInput.value,
-                    attendance: attendanceInput.value,
-                    timestamp: serverTimestamp(),
-                    userId: currentUser.uid
-                });
-                msgInput.value = '';
-            } catch (error) {
-                console.error("FIREBASE POST ERROR:", error);
-                alert("Gagal mengirim ucapan. Silakan coba lagi.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalBtnText;
-            }
-        }
-
-        function escapeHtml(text) {
-            if (!text) return "";
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
+      function escapeHtml(text) {
+        if (!text) return "";
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
     </script>
 
-    <!-- 
-      PENTING: Ganti isi di bawah ini dengan konfigurasi Firebase Anda sendiri.
-      Lihat file panduan_firebase.md untuk caranya.
-    -->
+    <!-- PENTING: Konfigurasi Firebase -->
     <script type="application/json" id="firebase-config">
-        {
-            "apiKey": "AIzaSyBa9gVEId5i-ZZGiCLSLbyTaCfoG1DVYok", 
-            "authDomain": "undangan-aji-yesi.firebaseapp.com", 
-            "projectId": "undangan-aji-yesi", 
-            "storageBucket": "undangan-aji-yesi.firebasestorage.app", 
-            "messagingSenderId": "1000413987130", 
-            "appId": "1:1000413987130:web:91379023bf32749cee5003"
-        }
+      {
+        "apiKey": "AIzaSyBa9gVEId5i-ZZGiCLSLbyTaCfoG1DVYok",
+        "authDomain": "undangan-aji-yesi.firebaseapp.com",
+        "projectId": "undangan-aji-yesi",
+        "storageBucket": "undangan-aji-yesi.firebasestorage.app",
+        "messagingSenderId": "1000413987130",
+        "appId": "1:1000413987130:web:91379023bf32749cee5003"
+      }
     </script>
-    <script type="txt" id="app-id">undangan-nikah-aji-yesi</script>
+    <script type="txt" id="app-id">
+      undangan-nikah-aji-yesi
+    </script>
 
     <style>
-        :root {
-            --bg-dark: #050505;
-            --bg-card: #121212;
-            --cyber-green: #00ff41;
-            --math-gold: #d4af37;
-            --text-main: #f5f5f5;
-        }
+      :root {
+        --bg-dark: #050505;
+        --bg-card: #121212;
+        --cyber-green: #00ff41;
+        --math-gold: #d4af37;
+        --text-main: #f5f5f5;
+      }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            scroll-behavior: smooth; 
-        }
+      body {
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        font-family: "Inter", sans-serif;
+        overflow-x: hidden;
+        scroll-behavior: smooth;
+      }
 
-        .font-code { font-family: 'Fira Code', monospace; }
-        .font-script { font-family: 'Great Vibes', cursive; }
-        .font-elegant { font-family: 'Cinzel', serif; }
-        .font-tech { font-family: 'Orbitron', sans-serif; }
+      .font-code {
+        font-family: "Fira Code", monospace;
+      }
+      .font-script {
+        font-family: "Great Vibes", cursive;
+      }
+      .font-elegant {
+        font-family: "Cinzel", serif;
+      }
+      .font-tech {
+        font-family: "Orbitron", sans-serif;
+      }
 
-        /* --- 3D & ANIMATION UTILITIES --- */
-        
-        .perspective-container {
-            perspective: 1000px;
-            transform-style: preserve-3d;
-        }
-        
-        .card-3d {
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-            will-change: transform;
-        }
+      /* --- 3D & ANIMATION UTILITIES --- */
+      .perspective-container {
+        perspective: 1000px;
+        transform-style: preserve-3d;
+      }
+      .card-3d {
+        transform-style: preserve-3d;
+        transition: transform 0.1s ease-out;
+        will-change: transform;
+      }
+      .card-3d-content {
+        transform: translateZ(20px);
+      }
+      .card-3d button {
+        transform: translateZ(40px);
+        position: relative;
+        z-index: 50;
+        cursor: pointer;
+      }
 
-        .card-3d-content {
-            transform: translateZ(20px);
-        }
-        
-        .card-3d button {
-            transform: translateZ(40px);
-            position: relative;
-            z-index: 50;
-            cursor: pointer;
-        }
+      /* Reveal Animation Base */
+      .reveal-on-scroll {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+        transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        filter: blur(5px);
+      }
+      .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
 
-        /* Reveal Animation Base */
-        .reveal-on-scroll {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
-            filter: blur(5px);
-        }
+      /* Staggered Delay for Love Story Items */
+      .stagger-delay-1 {
+        transition-delay: 100ms;
+      }
+      .stagger-delay-2 {
+        transition-delay: 300ms;
+      }
+      .stagger-delay-3 {
+        transition-delay: 500ms;
+      }
+      .stagger-delay-4 {
+        transition-delay: 700ms;
+      }
 
-        .reveal-on-scroll.is-visible {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
+      /* New Animation: Slow Zoom for Cover */
+      @keyframes ken-burns {
+        0% {
+          transform: scale(1);
         }
+        100% {
+          transform: scale(1.1);
+        }
+      }
+      .animate-ken-burns {
+        animation: ken-burns 20s infinite alternate ease-in-out;
+      }
 
-        /* Staggered Delay for Love Story Items */
-        .stagger-delay-1 { transition-delay: 100ms; }
-        .stagger-delay-2 { transition-delay: 300ms; }
-        .stagger-delay-3 { transition-delay: 500ms; }
-        .stagger-delay-4 { transition-delay: 700ms; }
+      /* New Animation: Shimmer for Gift Cards */
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%) skewX(-15deg);
+        }
+        100% {
+          transform: translateX(200%) skewX(-15deg);
+        }
+      }
+      .shimmer-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.1) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        animation: shimmer 3s infinite;
+      }
 
-        /* New Animation: Slow Zoom for Cover */
-        @keyframes ken-burns {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.1); }
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
         }
-        .animate-ken-burns {
-            animation: ken-burns 20s infinite alternate ease-in-out;
+        to {
+          opacity: 1;
+          transform: translateX(0);
         }
+      }
+      .animate-slide-in {
+        animation: slideInRight 0.4s ease-out forwards;
+      }
 
-        /* New Animation: Shimmer for Gift Cards */
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) skewX(-15deg); }
-            100% { transform: translateX(200%) skewX(-15deg); }
-        }
-        .shimmer-effect {
-            position: absolute;
-            top: 0; left: 0; width: 50%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-            animation: shimmer 3s infinite;
-        }
+      .bg-matrix {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        background: radial-gradient(circle at 50% 50%, #0a1a0f, #000000);
+        pointer-events: none;
+      }
 
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .animate-slide-in { animation: slideInRight 0.4s ease-out forwards; }
+      .floating-symbol {
+        position: absolute;
+        color: rgba(212, 175, 55, 0.15);
+        font-family: "Times New Roman", serif;
+        animation: floatUp 15s infinite linear;
+        z-index: -1;
+        text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+      }
 
-        .bg-matrix {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 0;
-            background: radial-gradient(circle at 50% 50%, #0a1a0f, #000000);
-            pointer-events: none;
-        }
+      .binary-rain {
+        position: absolute;
+        color: rgba(0, 255, 65, 0.08);
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        animation: rainDown 10s infinite linear;
+        z-index: -1;
+        font-size: 10px;
+      }
 
-        .floating-symbol {
-            position: absolute;
-            color: rgba(212, 175, 55, 0.15);
-            font-family: 'Times New Roman', serif;
-            animation: floatUp 15s infinite linear;
-            z-index: -1;
-            text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+      @keyframes floatUp {
+        0% {
+          transform: translateY(110vh) rotate(0deg) scale(0.8);
+          opacity: 0;
         }
-        
-        .binary-rain {
-            position: absolute;
-            color: rgba(0, 255, 65, 0.08);
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            animation: rainDown 10s infinite linear;
-            z-index: -1;
-            font-size: 10px;
+        20% {
+          opacity: 0.6;
         }
+        80% {
+          opacity: 0.6;
+        }
+        100% {
+          transform: translateY(-10vh) rotate(360deg) scale(1.2);
+          opacity: 0;
+        }
+      }
 
-        @keyframes floatUp {
-            0% { transform: translateY(110vh) rotate(0deg) scale(0.8); opacity: 0; }
-            20% { opacity: 0.6; }
-            80% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) rotate(360deg) scale(1.2); opacity: 0; }
+      @keyframes rainDown {
+        0% {
+          transform: translateY(-100vh);
+          opacity: 0;
         }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          transform: translateY(100vh);
+          opacity: 0;
+        }
+      }
 
-        @keyframes rainDown {
-            0% { transform: translateY(-100vh); opacity: 0; }
-            50% { opacity: 0.5; }
-            100% { transform: translateY(100vh); opacity: 0; }
-        }
+      .glass-card {
+        background: rgba(20, 20, 20, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+          inset 0 0 20px rgba(255, 255, 255, 0.02);
+        transform-style: preserve-3d;
+      }
 
-        .glass-card {
-            background: rgba(20, 20, 20, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            box-shadow: 
-                0 10px 30px rgba(0, 0, 0, 0.5),
-                inset 0 0 20px rgba(255, 255, 255, 0.02);
-            transform-style: preserve-3d;
+      .glitch {
+        position: relative;
+      }
+      .glitch::before,
+      .glitch::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .glitch::before {
+        left: 2px;
+        text-shadow: -1px 0 #ff00c1;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim 5s infinite linear alternate-reverse;
+      }
+      .glitch::after {
+        left: -2px;
+        text-shadow: -1px 0 #00fff9;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim2 5s infinite linear alternate-reverse;
+      }
+      @keyframes glitch-anim {
+        0% {
+          clip: rect(10px, 9999px, 30px, 0);
         }
+        20% {
+          clip: rect(80px, 9999px, 100px, 0);
+        }
+        100% {
+          clip: rect(40px, 9999px, 60px, 0);
+        }
+      }
+      @keyframes glitch-anim2 {
+        0% {
+          clip: rect(60px, 9999px, 90px, 0);
+        }
+        20% {
+          clip: rect(10px, 9999px, 50px, 0);
+        }
+        100% {
+          clip: rect(120px, 9999px, 140px, 0);
+        }
+      }
 
-        .glitch { position: relative; }
-        .glitch::before, .glitch::after {
-            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        }
-        .glitch::before {
-            left: 2px; text-shadow: -1px 0 #ff00c1; clip: rect(44px, 450px, 56px, 0); animation: glitch-anim 5s infinite linear alternate-reverse;
-        }
-        .glitch::after {
-            left: -2px; text-shadow: -1px 0 #00fff9; clip: rect(44px, 450px, 56px, 0); animation: glitch-anim2 5s infinite linear alternate-reverse;
-        }
-        @keyframes glitch-anim {
-            0% { clip: rect(10px, 9999px, 30px, 0); } 20% { clip: rect(80px, 9999px, 100px, 0); } 100% { clip: rect(40px, 9999px, 60px, 0); }
-        }
-        @keyframes glitch-anim2 {
-            0% { clip: rect(60px, 9999px, 90px, 0); } 20% { clip: rect(10px, 9999px, 50px, 0); } 100% { clip: rect(120px, 9999px, 140px, 0); }
-        }
+      .story-ring {
+        background: linear-gradient(
+          45deg,
+          var(--cyber-green),
+          var(--math-gold)
+        );
+        padding: 2px;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+      }
+      .story-ring:hover {
+        transform: scale(1.1) rotate(5deg);
+      }
 
-        .story-ring {
-            background: linear-gradient(45deg, var(--cyber-green), var(--math-gold));
-            padding: 2px;
-            border-radius: 50%;
-            transition: transform 0.3s ease;
-        }
-        .story-ring:hover { transform: scale(1.1) rotate(5deg); }
+      .phone-frame {
+        max-width: 480px;
+        margin: 0 auto;
+        min-height: 100vh;
+        border-left: 1px solid #222;
+        border-right: 1px solid #222;
+        position: relative;
+        background: rgba(0, 0, 0, 0.95);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+      }
 
-        .phone-frame {
-            max-width: 480px; margin: 0 auto; min-height: 100vh;
-            border-left: 1px solid #222; border-right: 1px solid #222; position: relative;
-            background: rgba(0,0,0,0.95);
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-        }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
 
-        /* Custom style for active play/pause button */
-        .play-pause-btn.playing {
-            color: var(--cyber-green); 
-            text-shadow: 0 0 10px var(--cyber-green);
-        }
+      /* Custom style for active play/pause button */
+      .play-pause-btn.playing {
+        color: var(--cyber-green);
+        text-shadow: 0 0 10px var(--cyber-green);
+      }
     </style>
-</head>
-<body>
-
-    <audio id="bg-music" loop>
-        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=cinematic-atmosphere-score-2-21275.mp3" type="audio/mp3">
-    </audio>
+  </head>
+  <body>
+    <!-- 
+      === KONFIGURASI MUSIK (YOUTUBE) ===
+      PANDUAN:
+      1. Masukkan ID Video Youtube pada 'videoId'. 
+         Contoh URL: https://www.youtube.com/watch?v=gnRCnyC8z0M
+         Maka ID-nya adalah: gnRCnyC8z0M
+      2. 'startTime' adalah detik mulai lagu (cth: 25 untuk detik ke-25).
+    -->
+    <script>
+      const YOUTUBE_CONFIG = {
+        videoId: "gnRCnyC8z0M", // ID Video Anda
+        startTime: 25, // Mulai detik ke-25
+        volume: 50, // Volume 0-100
+      };
+    </script>
+    <!-- Hidden Player Container -->
+    <div id="youtube-player" style="display: none"></div>
 
     <!-- MATRIX BACKGROUND -->
     <div class="bg-matrix" id="bg-animation"></div>
 
     <!-- 1. LANDING PAGE / LOCK SCREEN -->
-    <div id="lock-screen" class="fixed inset-0 z-50 flex flex-col justify-center items-center text-center p-6 phone-frame perspective-container" style="background: transparent; border:none;">
-        
-        <!-- NEW: CANVAS ANIMATION BACKGROUND (Replaces GIF) -->
-        <canvas id="intro-canvas" class="absolute inset-0 z-0 w-full h-full object-cover"></canvas>
-        
-        <!-- Overlay for readability -->
-        <div class="absolute inset-0 bg-black bg-opacity-60 z-10 backdrop-blur-[2px]"></div>
-        
-        <div id="tilt-card" class="z-20 relative w-full max-w-xs card-3d">
-            <div class="glass-card p-8 rounded-xl border-t border-gray-700">
-                <div class="card-3d-content">
-                    <p class="text-green-500 text-xs tracking-[0.3em] mb-6 font-mono border-b border-gray-800 pb-2">
-                        <span id="typing-status" class="animate-pulse">SYSTEM SECURE</span>
-                    </p>
-                    
-                    <h1 class="font-elegant text-5xl text-yellow-500 mb-2 glitch drop-shadow-lg" data-text="Aji & Yesi">
-                        Aji & Yesi
-                    </h1>
-                    
-                    <p class="font-script text-2xl text-gray-300 mb-10 transform -rotate-2">The Perfect Equation</p>
-                    
-                    <div class="mb-8">
-                        <p class="text-gray-400 text-[10px] uppercase tracking-widest mb-2">Kepada Yth.</p>
-                        <h3 id="guest-name-display" class="text-xl font-bold text-white font-elegant border border-gray-700 py-2 px-4 rounded bg-black bg-opacity-40 shadow-inner">
-                            Tamu Undangan
-                        </h3>
-                    </div>
-                    
-                    <button onclick="unlockPhone()" class="group relative w-full overflow-hidden rounded bg-transparent border border-green-500 px-6 py-3 font-tech text-sm text-green-500 transition-all duration-300 hover:bg-green-500 hover:text-black hover:shadow-[0_0_20px_#00ff41] z-50 cursor-pointer">
-                        <span class="relative flex items-center justify-center pointer-events-none">
-                            <i class="fas fa-fingerprint mr-2 text-lg group-hover:scale-110 transition-transform"></i> 
-                            DECRYPT & OPEN
-                        </span>
-                    </button>
-                </div>
+    <div
+      id="lock-screen"
+      class="fixed inset-0 z-50 flex flex-col justify-center items-center text-center p-6 phone-frame perspective-container"
+      style="background: transparent; border: none"
+    >
+      <!-- NEW: CANVAS ANIMATION BACKGROUND (Replaces GIF) -->
+      <canvas
+        id="intro-canvas"
+        class="absolute inset-0 z-0 w-full h-full object-cover"
+      ></canvas>
+
+      <!-- Overlay for readability -->
+      <div
+        class="absolute inset-0 bg-black bg-opacity-60 z-10 backdrop-blur-[2px]"
+      ></div>
+
+      <div id="tilt-card" class="z-20 relative w-full max-w-xs card-3d">
+        <div class="glass-card p-8 rounded-xl border-t border-gray-700">
+          <div class="card-3d-content">
+            <p
+              class="text-green-500 text-xs tracking-[0.3em] mb-6 font-mono border-b border-gray-800 pb-2"
+            >
+              <span id="typing-status" class="animate-pulse"
+                >SYSTEM SECURE</span
+              >
+            </p>
+
+            <h1
+              class="font-elegant text-5xl text-yellow-500 mb-2 glitch drop-shadow-lg"
+              data-text="Aji & Yesi"
+            >
+              Aji & Yesi
+            </h1>
+
+            <p
+              class="font-script text-2xl text-gray-300 mb-10 transform -rotate-2"
+            >
+              The Perfect Equation
+            </p>
+
+            <div class="mb-8">
+              <p
+                class="text-gray-400 text-[10px] uppercase tracking-widest mb-2"
+              >
+                Kepada Yth.
+              </p>
+              <h3
+                id="guest-name-display"
+                class="text-xl font-bold text-white font-elegant border border-gray-700 py-2 px-4 rounded bg-black bg-opacity-40 shadow-inner"
+              >
+                Tamu Undangan
+              </h3>
             </div>
+
+            <button
+              onclick="unlockPhone()"
+              class="group relative w-full overflow-hidden rounded bg-transparent border border-green-500 px-6 py-3 font-tech text-sm text-green-500 transition-all duration-300 hover:bg-green-500 hover:text-black hover:shadow-[0_0_20px_#00ff41] z-50 cursor-pointer"
+            >
+              <span
+                class="relative flex items-center justify-center pointer-events-none"
+              >
+                <i
+                  class="fas fa-fingerprint mr-2 text-lg group-hover:scale-110 transition-transform"
+                ></i>
+                DECRYPT & OPEN
+              </span>
+            </button>
+          </div>
         </div>
-        
-        <p class="absolute bottom-10 z-20 text-[10px] text-gray-600 font-mono">SECURE CONNECTION ESTABLISHED</p>
+      </div>
+
+      <p class="absolute bottom-10 z-20 text-[10px] text-gray-600 font-mono">
+        SECURE CONNECTION ESTABLISHED
+      </p>
     </div>
 
     <!-- MAIN APP INTERFACE -->
     <div id="main-app" class="hidden phone-frame pb-16 relative z-20">
-        
-        <!-- Top Nav -->
-        <nav class="sticky top-0 z-40 border-b border-gray-800 px-4 py-3 flex justify-between items-center backdrop-blur-md bg-black bg-opacity-80 transition-all duration-300">
-            <div class="flex items-center gap-1">
-                <span class="font-bold text-xl font-script text-white mt-1 drop-shadow-md">Aji & Yesi</span>
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+      <!-- Top Nav -->
+      <nav
+        class="sticky top-0 z-40 border-b border-gray-800 px-4 py-3 flex justify-between items-center backdrop-blur-md bg-black bg-opacity-80 transition-all duration-300"
+      >
+        <div class="flex items-center gap-1">
+          <span
+            class="font-bold text-xl font-script text-white mt-1 drop-shadow-md"
+            >Aji & Yesi</span
+          >
+          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        </div>
+        <div class="flex space-x-5 text-white">
+          <i
+            class="far fa-heart text-xl hover:text-red-500 transition-colors cursor-pointer"
+          ></i>
+          <div class="relative cursor-pointer">
+            <i
+              class="far fa-paper-plane text-xl transform -rotate-12 hover:scale-110 transition-transform"
+            ></i>
+            <span
+              class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full animate-bounce"
+              >1</span
+            >
+          </div>
+        </div>
+      </nav>
+
+      <!-- Stories -->
+      <div
+        class="px-4 py-3 border-b border-gray-900 overflow-x-auto no-scrollbar bg-black"
+      >
+        <div class="flex space-x-5 min-w-max">
+          <!-- 1. Cover -->
+          <div
+            class="flex flex-col items-center space-y-2 cursor-pointer group"
+            onclick="scrollToId('post-cover')"
+          >
+            <div
+              class="story-ring w-16 h-16 flex items-center justify-center group-hover:shadow-[0_0_15px_#00ff41] transition-shadow"
+            >
+              <div
+                class="w-[60px] h-[60px] rounded-full overflow-hidden border-2 border-black relative"
+              >
+                <img
+                  src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb1.jpg?w=150&q=80"
+                  class="w-full h-full object-cover"
+                />
+              </div>
             </div>
-            <div class="flex space-x-5 text-white">
-                <i class="far fa-heart text-xl hover:text-red-500 transition-colors cursor-pointer"></i>
-                <div class="relative cursor-pointer">
-                    <i class="far fa-paper-plane text-xl transform -rotate-12 hover:scale-110 transition-transform"></i>
-                    <span class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full animate-bounce">1</span>
-                </div>
+            <span class="text-[10px] text-gray-300 font-mono">Cover</span>
+          </div>
+
+          <!-- 2. Mempelai -->
+          <div
+            class="flex flex-col items-center space-y-2 cursor-pointer group"
+            onclick="scrollToId('mempelai-section')"
+          >
+            <div
+              class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#00ff41] transition-shadow"
+            >
+              <div
+                class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black"
+              >
+                <i
+                  class="fas fa-user-friends text-blue-400 text-xl group-hover:scale-110 transition-transform"
+                ></i>
+              </div>
             </div>
-        </nav>
+            <span class="text-[10px] text-gray-300 font-mono">Mempelai</span>
+          </div>
 
-        <!-- Stories (UPDATED: 7 ITEMS) -->
-        <div class="px-4 py-3 border-b border-gray-900 overflow-x-auto no-scrollbar bg-black">
-            <div class="flex space-x-5 min-w-max">
-                <!-- 1. Cover -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('post-cover')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center group-hover:shadow-[0_0_15px_#00ff41] transition-shadow">
-                        <div class="w-[60px] h-[60px] rounded-full overflow-hidden border-2 border-black relative">
-                            <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb1.jpg?w=150&q=80" class="w-full h-full object-cover">
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Cover</span>
-                </div>
-
-                <!-- 2. Mempelai -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('mempelai-section')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#00ff41] transition-shadow">
-                        <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black">
-                            <i class="fas fa-user-friends text-blue-400 text-xl group-hover:scale-110 transition-transform"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Mempelai</span>
-                </div>
-
-                <!-- 3. Quran Quotes -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('post-quotes')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#d4af37] transition-shadow">
-                        <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black">
-                            <i class="fas fa-quran text-green-500 text-xl group-hover:rotate-12 transition-transform"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Quotes</span>
-                </div>
-
-                <!-- 4. Love Story -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('post-lovestory')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#ff00c1] transition-shadow">
-                        <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black">
-                            <i class="fas fa-history text-pink-500 text-xl group-hover:spin transition-transform"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Story</span>
-                </div>
-
-                <!-- 5. Time & Location -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('post-location')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#d4af37] transition-shadow">
-                        <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black">
-                            <i class="fas fa-map-marker-alt text-yellow-500 text-xl transform group-hover:bounce"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Location</span>
-                </div>
-
-                <!-- 6. Gallery -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('post-gallery')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#00ff41] transition-shadow">
-                        <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black">
-                            <i class="fas fa-images text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Gallery</span>
-                </div>
-
-                <!-- 7. Gift -->
-                <div class="flex flex-col items-center space-y-2 cursor-pointer group" onclick="scrollToId('post-gift')">
-                    <div class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#00ff41] transition-shadow">
-                        <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black">
-                            <i class="fas fa-gift text-green-500 text-xl group-hover:swing transition-transform"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-mono">Gift</span>
-                </div>
+          <!-- 3. Quran Quotes -->
+          <div
+            class="flex flex-col items-center space-y-2 cursor-pointer group"
+            onclick="scrollToId('post-quotes')"
+          >
+            <div
+              class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#d4af37] transition-shadow"
+            >
+              <div
+                class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black"
+              >
+                <i
+                  class="fas fa-quran text-green-500 text-xl group-hover:rotate-12 transition-transform"
+                ></i>
+              </div>
             </div>
+            <span class="text-[10px] text-gray-300 font-mono">Quotes</span>
+          </div>
+
+          <!-- 4. Love Story -->
+          <div
+            class="flex flex-col items-center space-y-2 cursor-pointer group"
+            onclick="scrollToId('post-lovestory')"
+          >
+            <div
+              class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#ff00c1] transition-shadow"
+            >
+              <div
+                class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black"
+              >
+                <i
+                  class="fas fa-history text-pink-500 text-xl group-hover:spin transition-transform"
+                ></i>
+              </div>
+            </div>
+            <span class="text-[10px] text-gray-300 font-mono">Story</span>
+          </div>
+
+          <!-- 5. Time & Location -->
+          <div
+            class="flex flex-col items-center space-y-2 cursor-pointer group"
+            onclick="scrollToId('post-location')"
+          >
+            <div
+              class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#d4af37] transition-shadow"
+            >
+              <div
+                class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black"
+              >
+                <i
+                  class="fas fa-map-marker-alt text-yellow-500 text-xl transform group-hover:bounce"
+                ></i>
+              </div>
+            </div>
+            <span class="text-[10px] text-gray-300 font-mono">Location</span>
+          </div>
+
+          <!-- 6. Gallery -->
+          <div
+            class="flex flex-col items-center space-y-2 cursor-pointer group"
+            onclick="scrollToId('post-gallery')"
+          >
+            <div
+              class="story-ring w-16 h-16 flex items-center justify-center p-[2px] bg-gray-800 group-hover:shadow-[0_0_15px_#00ff41] transition-shadow"
+            >
+              <div
+                class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center border-2 border-black"
+              >
+                <i
+                  class="fas fa-images text-purple-400 text-xl group-hover:scale-110 transition-transform"
+                ></i>
+              </div>
+            </div>
+            <span class="text-[10px] text-gray-300 font-mono">Gallery</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 1: COVER -->
+      <article
+        id="post-cover"
+        class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <img
+              src="https://ui-avatars.com/api/?name=The+Union&background=000&color=fff"
+              class="w-8 h-8 rounded-full border border-gray-700"
+            />
+            <div>
+              <p class="text-sm font-bold text-white">Alam Semesta</p>
+              <p class="text-[10px] text-gray-400">
+                Kroya+Jember • Wedding Initialization
+              </p>
+            </div>
+          </div>
+          <i class="fas fa-ellipsis-h text-gray-400"></i>
+        </div>
+        <div
+          class="relative w-full aspect-square bg-gray-900 overflow-hidden group"
+        >
+          <!-- Animate Ken Burns -->
+          <img
+            src="https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80"
+            class="w-full h-full object-cover opacity-80 animate-ken-burns"
+          />
+          <div
+            class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-t from-black via-transparent to-black/30"
+          >
+            <div
+              class="border border-green-500 px-3 py-1 rounded mb-4 backdrop-blur-sm"
+            >
+              <p class="font-code text-green-500 text-xs tracking-widest">
+                ACCESS GRANTED
+              </p>
+            </div>
+            <h1
+              class="font-script text-6xl text-white mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]"
+            >
+              Aji & Yesi
+            </h1>
+            <p
+              class="text-yellow-500 font-code text-xs tracking-widest uppercase mt-2"
+            >
+              Tuesday, 20 October 2026
+            </p>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex space-x-4 text-2xl text-white mb-3">
+            <i
+              class="far fa-heart cursor-pointer hover:text-red-500 transition-colors"
+              onclick="toggleLike(this)"
+            ></i>
+            <i
+              class="far fa-comment cursor-pointer hover:text-blue-400 transition-colors"
+            ></i>
+            <i
+              class="far fa-paper-plane cursor-pointer hover:text-green-400 transition-colors"
+            ></i>
+          </div>
+          <p class="text-sm font-bold text-white">
+            Guest_Access_Log likes this
+          </p>
+          <div class="text-sm text-gray-300 mt-2">
+            <span class="font-bold text-white mr-1">Alam Semesta</span>
+            Bismillah. We are executing the marriage protocol.
+            <span class="text-green-500 font-mono text-xs block mt-1"
+              >#CyberMathWedding #AjiYesi</span
+            >
+          </div>
+        </div>
+      </article>
+
+      <!-- POST 2: MEMPELAI -->
+      <article
+        id="mempelai-section"
+        class="bg-black mb-4 border-b border-gray-900 relative group reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <img
+              src="https://ui-avatars.com/api/?name=Bride+Groom&background=333&color=fff"
+              class="w-8 h-8 rounded-full"
+            />
+            <div>
+              <p class="text-sm font-bold text-white">mempelai_official</p>
+              <p class="text-[10px] text-gray-400">
+                Swipe for details (Auto Slide On)
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- POST 1: COVER (Added Ken Burns Effect) -->
-        <article id="post-cover" class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <img src="https://ui-avatars.com/api/?name=The+Union&background=000&color=fff" class="w-8 h-8 rounded-full border border-gray-700">
-                    <div>
-                        <p class="text-sm font-bold text-white">Alam Semesta</p>
-                        <p class="text-[10px] text-gray-400">Kroya+Jember • Wedding Initialization</p>
-                    </div>
-                </div>
-                <i class="fas fa-ellipsis-h text-gray-400"></i>
-            </div>
-            <div class="relative w-full aspect-square bg-gray-900 overflow-hidden group">
-                <!-- Animate Ken Burns -->
-                <img src="https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80" class="w-full h-full object-cover opacity-80 animate-ken-burns">
-                <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-t from-black via-transparent to-black/30">
-                    <div class="border border-green-500 px-3 py-1 rounded mb-4 backdrop-blur-sm">
-                        <p class="font-code text-green-500 text-xs tracking-widest">ACCESS GRANTED</p>
-                    </div>
-                    <h1 class="font-script text-6xl text-white mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">Aji & Yesi</h1>
-                    <p class="text-yellow-500 font-code text-xs tracking-widest uppercase mt-2">Tuesday, 20 October 2026</p>
-                </div>
-            </div>
-            <div class="p-4">
-                <div class="flex space-x-4 text-2xl text-white mb-3">
-                    <i class="far fa-heart cursor-pointer hover:text-red-500 transition-colors" onclick="toggleLike(this)"></i>
-                    <i class="far fa-comment cursor-pointer hover:text-blue-400 transition-colors"></i>
-                    <i class="far fa-paper-plane cursor-pointer hover:text-green-400 transition-colors"></i>
-                </div>
-                <p class="text-sm font-bold text-white">Guest_Access_Log likes this</p>
-                <div class="text-sm text-gray-300 mt-2">
-                    <span class="font-bold text-white mr-1">Alam Semesta</span>
-                    Bismillah. We are executing the marriage protocol.
-                    <span class="text-green-500 font-mono text-xs block mt-1">#CyberMathWedding #AjiYesi</span>
-                </div>
-            </div>
-        </article>
+        <div class="relative">
+          <button
+            onclick="scrollCarousel('left')"
+            class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full z-10 hover:bg-green-500 hover:text-black transition-all border border-gray-700"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button
+            onclick="scrollCarousel('right')"
+            class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full z-10 hover:bg-green-500 hover:text-black transition-all border border-gray-700"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
 
-        <!-- POST 2: MEMPELAI (Auto Slide Implemented) -->
-        <article id="mempelai-section" class="bg-black mb-4 border-b border-gray-900 relative group reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <img src="https://ui-avatars.com/api/?name=Bride+Groom&background=333&color=fff" class="w-8 h-8 rounded-full">
-                    <div>
-                        <p class="text-sm font-bold text-white">mempelai_official</p>
-                        <p class="text-[10px] text-gray-400">Swipe for details (Auto Slide On)</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="relative">
-                <button onclick="scrollCarousel('left')" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full z-10 hover:bg-green-500 hover:text-black transition-all border border-gray-700">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button onclick="scrollCarousel('right')" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full z-10 hover:bg-green-500 hover:text-black transition-all border border-gray-700">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-
-                <div id="mempelai-carousel" class="flex overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth">
-                    <!-- Groom -->
-                    <div class="min-w-full snap-center relative">
-                        <div class="aspect-[4/5] bg-gray-900 relative overflow-hidden">
-                            <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb3.jpg?w=600&q=80" class="w-full h-full object-cover opacity-70">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-                            <div class="absolute bottom-0 left-0 w-full p-8 translate-y-2 transform transition-transform">
-                                <h2 class="text-4xl font-bold text-white glitch-text mb-2" data-text="Aji Pratama">Aji Pratama S.Tr.Kom</h2>
-                                <!-- NEW INSTAGRAM CODE START -->
-                                <a href="https://www.instagram.com/aji.prtmaaa/" target="_blank" class="flex items-center space-x-2 mb-2 group/insta">
-                                    <i class="fab fa-instagram text-green-500 group-hover/insta:text-white transition-colors"></i>
-                                    <span class="text-green-500 font-mono text-xs group-hover/insta:text-white transition-colors tracking-wider">@aji.prtmaaa</span>
-                                </a>
-                                <!-- NEW INSTAGRAM CODE END -->
-                                <p class="text-green-500 font-mono text-sm mb-4 inline-block border border-green-500 px-2 py-0.5 rounded">Cyber Security Engineer</p>
-                                <div class="border-l-4 border-green-500 pl-4 bg-black/30 p-2 rounded-r">
-                                    <p class="text-xs text-gray-300 uppercase tracking-widest mb-1">Putra Pertama dari:</p>
-                                    <p class="text-sm font-bold text-white">Bpk. Siwo & Ibu Mahmudah</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Bride -->
-                    <div class="min-w-full snap-center relative">
-                        <div class="aspect-[4/5] bg-gray-900 relative overflow-hidden">
-                            <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb6.jpg?w=600&q=80" class="w-full h-full object-cover opacity-70">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-                            <div class="absolute bottom-0 left-0 w-full p-8">
-                                <h2 class="text-4xl font-bold text-white glitch-text mb-2" data-text="Yesi Lintang">Yesi Lintang Setyani S.Pd</h2>
-                                 <!-- NEW INSTAGRAM CODE START -->
-                                <a href="https://www.instagram.com/yesilntngstyn/" target="_blank" class="flex items-center space-x-2 mb-2 group/insta">
-                                     <i class="fab fa-instagram text-yellow-500 group-hover/insta:text-white transition-colors"></i>
-                                     <span class="text-yellow-500 font-mono text-xs group-hover/insta:text-white transition-colors tracking-wider">@yesilntngstyn</span>
-                                </a>
-                                <!-- NEW INSTAGRAM CODE END -->
-                                <p class="text-yellow-500 font-mono text-sm mb-4 inline-block border border-yellow-500 px-2 py-0.5 rounded">Mathematics Teacher</p>
-                                <div class="border-l-4 border-yellow-500 pl-4 bg-black/30 p-2 rounded-r">
-                                    <p class="text-xs text-gray-300 uppercase tracking-widest mb-1">Putri Ketiga dari:</p>
-                                    <p class="text-sm font-bold text-white">Bpk. Imam Hidayat & Ibu Sukesih</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Indicators -->
-                <div class="absolute bottom-4 right-4 flex space-x-2 z-10">
-                     <div class="w-2 h-2 rounded-full bg-white opacity-80 animate-pulse"></div>
-                     <div class="w-2 h-2 rounded-full bg-gray-500 opacity-80"></div>
-                </div>
-            </div>
-        </article>
-
-        <!-- POST 3: QURAN QUOTES -->
-        <article id="post-quotes" class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-quran text-yellow-500 text-lg"></i>
-                    <div>
-                        <p class="text-sm font-bold text-white">holy_verses</p>
-                        <p class="text-[10px] text-gray-400">Sacred Data</p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-10 bg-gradient-to-b from-gray-900 to-black text-center flex flex-col justify-center items-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent"></div>
-                
-                <i class="fas fa-quote-left text-4xl text-gray-800 mb-4"></i>
-                <div class="mb-8 relative z-10">
-                    <p class="text-yellow-100 font-serif text-xl italic mb-4 leading-relaxed">"Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri..."</p>
-                    <p class="text-xs text-green-500 font-mono tracking-widest border border-green-900 inline-block px-3 py-1 rounded bg-black">[QS. Ar-Rum: 21]</p>
-                </div>
-                <div class="w-20 h-0.5 bg-gray-700 mb-8 rounded-full"></div>
-                <div class="relative z-10">
-                    <p class="text-gray-400 font-serif italic mb-3 text-sm">"Dan segala sesuatu Kami ciptakan berpasang-pasangan supaya kamu mengingat kebesaran Allah."</p>
-                    <p class="text-xs text-green-500 font-mono tracking-widest">[QS. Ad-Dhariyat: 49]</p>
-                </div>
-                <i class="fas fa-quote-right text-4xl text-gray-800 mt-4"></i>
-            </div>
-        </article>
-
-        <!-- POST 4: LOVE STORY (Staggered Animation Added) -->
-        <article id="post-lovestory" class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-history text-blue-400 text-lg"></i>
-                    <div>
-                        <p class="text-sm font-bold text-white">system_logs</p>
-                        <p class="text-[10px] text-gray-400">Connection History</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-black p-6 relative">
-                <!-- Glowing Line -->
-                <div class="absolute left-[34px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-green-500 via-yellow-500 to-transparent shadow-[0_0_10px_#00ff41]"></div>
-                
-                <div class="space-y-8 ml-2">
-                    <!-- 1 -->
-                    <div class="ml-8 relative group reveal-on-scroll stagger-delay-1">
-                        <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-green-500 border-4 border-black shadow-[0_0_10px_#00ff41] z-10 group-hover:scale-125 transition-transform"></span>
-                        <div class="bg-gray-900 p-4 rounded-lg border-l-2 border-green-500 hover:bg-gray-800 transition-colors">
-                            <div class="flex justify-between items-center mb-1">
-                                <h4 class="text-white font-bold">Initial Handshake</h4>
-                                <span class="text-xs text-green-500 font-mono">2024</span>
-                            </div>
-                            <p class="text-xs text-gray-400 leading-relaxed">Bertemu di dunia maya. Laptop error mempertemukan logika & kode.</p>
-                        </div>
-                    </div>
-                    <!-- 2 -->
-                    <div class="ml-8 relative group reveal-on-scroll stagger-delay-2">
-                        <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-yellow-500 border-4 border-black shadow-[0_0_10px_#d4af37] z-10 group-hover:scale-125 transition-transform"></span>
-                        <div class="bg-gray-900 p-4 rounded-lg border-l-2 border-yellow-500 hover:bg-gray-800 transition-colors">
-                            <div class="flex justify-between items-center mb-1">
-                                <h4 class="text-white font-bold">Solving Variables</h4>
-                                <span class="text-xs text-yellow-500 font-mono">2025</span>
-                            </div>
-                            <p class="text-xs text-gray-400 leading-relaxed">Mulai pendekatan. Mencari nilai X (Rindu) dan Y (Pertemuan).</p>
-                        </div>
-                    </div>
-                    <!-- 3 -->
-                    <div class="ml-8 relative group reveal-on-scroll stagger-delay-3">
-                        <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-green-500 border-4 border-black shadow-[0_0_10px_#00ff41] z-10 group-hover:scale-125 transition-transform"></span>
-                        <div class="bg-gray-900 p-4 rounded-lg border-l-2 border-green-500 hover:bg-gray-800 transition-colors">
-                             <div class="flex justify-between items-center mb-1">
-                                <h4 class="text-white font-bold">Encryption Key</h4>
-                                <span class="text-xs text-green-500 font-mono">2025</span>
-                            </div>
-                            <p class="text-xs text-gray-400 leading-relaxed">Resmi berkomitmen. Saling menjaga hati seperti menjaga server root.</p>
-                        </div>
-                    </div>
-                    <!-- 4 -->
-                    <div class="ml-8 relative group reveal-on-scroll stagger-delay-4">
-                        <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-white border-4 border-black animate-pulse shadow-[0_0_15px_white] z-10"></span>
-                         <div class="bg-gray-800 p-4 rounded-lg border-l-2 border-white shadow-lg transform translate-x-1">
-                             <div class="flex justify-between items-center mb-1">
-                                <h4 class="text-white font-bold text-lg">System Merge</h4>
-                                <span class="text-xs text-white font-mono bg-red-600 px-2 rounded">NOW</span>
-                            </div>
-                            <p class="text-sm text-gray-300 leading-relaxed">Menuju pelaminan. Two Databases, One Server.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </article>
-
-        <!-- POST 5: TIME & LOCATION (Updated Button Logic) -->
-        <article id="post-location" class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-calendar-alt text-red-500 text-lg"></i>
-                    <div>
-                        <p class="text-sm font-bold text-white">event_scheduler</p>
-                        <p class="text-[10px] text-gray-400">Time & Space Coordinates</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Countdown -->
-            <div class="bg-gray-900 p-6 border-b border-black">
-                <div class="flex justify-center gap-3 font-mono text-center">
-                    <div class="bg-black p-3 rounded-lg w-16 border-b-4 border-green-500 shadow-lg transform hover:-translate-y-1 transition-transform">
-                        <span id="d" class="block text-2xl text-green-500 font-bold">00</span>
-                        <span class="text-[10px] text-gray-500 uppercase">Days</span>
-                    </div>
-                    <div class="bg-black p-3 rounded-lg w-16 border-b-4 border-yellow-500 shadow-lg transform hover:-translate-y-1 transition-transform">
-                        <span id="h" class="block text-2xl text-yellow-500 font-bold">00</span>
-                        <span class="text-[10px] text-gray-500 uppercase">Hours</span>
-                    </div>
-                    <div class="bg-black p-3 rounded-lg w-16 border-b-4 border-green-500 shadow-lg transform hover:-translate-y-1 transition-transform">
-                        <span id="m" class="block text-2xl text-green-500 font-bold">00</span>
-                        <span class="text-[10px] text-gray-500 uppercase">Min</span>
-                    </div>
-                    <div class="bg-black p-3 rounded-lg w-16 border-b-4 border-yellow-500 shadow-lg transform hover:-translate-y-1 transition-transform">
-                        <span id="s" class="block text-2xl text-yellow-500 font-bold">00</span>
-                        <span class="text-[10px] text-gray-500 uppercase">Sec</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Details -->
-            <div class="p-6 bg-black text-center">
-                <h3 class="font-script text-4xl text-white mb-6">Selasa, 20 Oktober 2026</h3>
-                
-                <!-- NEW TEXT SECTION ADDED HERE AS REQUESTED -->
-                <div class="mb-8 px-2">
-                    <div class="flex justify-center mb-4">
-                         <!-- Decorative Icon resembling gunungan feeling -->
-                         <div class="w-12 h-12 rounded-full border border-yellow-600 flex items-center justify-center bg-gray-900">
-                             <i class="fas fa-praying-hands text-yellow-500 text-xl"></i>
-                         </div>
-                    </div>
-                    <p class="font-serif italic text-gray-300 leading-loose text-sm tracking-wide">
-                        "Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir untuk memberikan doa restu kepada kedua mempelai"
+          <div
+            id="mempelai-carousel"
+            class="flex overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth"
+          >
+            <!-- Groom -->
+            <div class="min-w-full snap-center relative">
+              <div class="aspect-[4/5] bg-gray-900 relative overflow-hidden">
+                <img
+                  src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb3.jpg?w=600&q=80"
+                  class="w-full h-full object-cover opacity-70"
+                />
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"
+                ></div>
+                <div
+                  class="absolute bottom-0 left-0 w-full p-8 translate-y-2 transform transition-transform"
+                >
+                  <h2
+                    class="text-4xl font-bold text-white glitch-text mb-2"
+                    data-text="Aji Pratama"
+                  >
+                    Aji Pratama S.Tr.Kom
+                  </h2>
+                  <a
+                    href="https://www.instagram.com/aji.prtmaaa/"
+                    target="_blank"
+                    class="flex items-center space-x-2 mb-2 group/insta"
+                  >
+                    <i
+                      class="fab fa-instagram text-green-500 group-hover/insta:text-white transition-colors"
+                    ></i>
+                    <span
+                      class="text-green-500 font-mono text-xs group-hover/insta:text-white transition-colors tracking-wider"
+                      >@aji.prtmaaa</span
+                    >
+                  </a>
+                  <p
+                    class="text-green-500 font-mono text-sm mb-4 inline-block border border-green-500 px-2 py-0.5 rounded"
+                  >
+                    Cyber Security Engineer
+                  </p>
+                  <div
+                    class="border-l-4 border-green-500 pl-4 bg-black/30 p-2 rounded-r"
+                  >
+                    <p
+                      class="text-xs text-gray-300 uppercase tracking-widest mb-1"
+                    >
+                      Putra Pertama dari:
                     </p>
-                    <div class="w-24 h-px bg-gradient-to-r from-transparent via-green-500 to-transparent mx-auto mt-6"></div>
+                    <p class="text-sm font-bold text-white">
+                      Bpk. Siwo & Ibu Mahmudah
+                    </p>
+                  </div>
                 </div>
-                <!-- END NEW TEXT SECTION -->
+              </div>
+            </div>
+            <!-- Bride -->
+            <div class="min-w-full snap-center relative">
+              <div class="aspect-[4/5] bg-gray-900 relative overflow-hidden">
+                <img
+                  src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb6.jpg?w=600&q=80"
+                  class="w-full h-full object-cover opacity-70"
+                />
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"
+                ></div>
+                <div class="absolute bottom-0 left-0 w-full p-8">
+                  <h2
+                    class="text-4xl font-bold text-white glitch-text mb-2"
+                    data-text="Yesi Lintang"
+                  >
+                    Yesi Lintang Setyani S.Pd
+                  </h2>
+                  <a
+                    href="https://www.instagram.com/yesilntngstyn/"
+                    target="_blank"
+                    class="flex items-center space-x-2 mb-2 group/insta"
+                  >
+                    <i
+                      class="fab fa-instagram text-yellow-500 group-hover/insta:text-white transition-colors"
+                    ></i>
+                    <span
+                      class="text-yellow-500 font-mono text-xs group-hover/insta:text-white transition-colors tracking-wider"
+                      >@yesilntngstyn</span
+                    >
+                  </a>
+                  <p
+                    class="text-yellow-500 font-mono text-sm mb-4 inline-block border border-yellow-500 px-2 py-0.5 rounded"
+                  >
+                    Mathematics Teacher
+                  </p>
+                  <div
+                    class="border-l-4 border-yellow-500 pl-4 bg-black/30 p-2 rounded-r"
+                  >
+                    <p
+                      class="text-xs text-gray-300 uppercase tracking-widest mb-1"
+                    >
+                      Putri Ketiga dari:
+                    </p>
+                    <p class="text-sm font-bold text-white">
+                      Bpk. Imam Hidayat & Ibu Sukesih
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Indicators -->
+          <div class="absolute bottom-4 right-4 flex space-x-2 z-10">
+            <div
+              class="w-2 h-2 rounded-full bg-white opacity-80 animate-pulse"
+            ></div>
+            <div class="w-2 h-2 rounded-full bg-gray-500 opacity-80"></div>
+          </div>
+        </div>
+      </article>
 
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800 hover:border-green-500 transition-colors">
-                        <i class="fas fa-ring text-green-500 mb-2 text-xl"></i>
-                        <p class="text-green-500 font-bold text-sm tracking-widest">AKAD NIKAH</p>
-                        <p class="text-xs text-white mt-1">08:00 - 10:00 WIB</p>
-                    </div>
-                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800 hover:border-yellow-500 transition-colors">
-                        <i class="fas fa-glass-cheers text-yellow-500 mb-2 text-xl"></i>
-                        <p class="text-yellow-500 font-bold text-sm tracking-widest">RESEPSI</p>
-                        <p class="text-xs text-white mt-1">11:00 - Selesai</p>
-                    </div>
-                </div>
-                
-                <!-- Fixed Map Container: Removed overflow-hidden from parent, applied to iframe wrapper -->
-                <div class="relative h-64 shadow-2xl border border-gray-800 group rounded-xl">
-                     <div class="absolute inset-0 rounded-xl overflow-hidden">
-                         <!-- <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.466453675037!2d106.82715331476906!3d-6.200000000000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e4e7e6e5bd%3A0x2e69f3e4e7e6e5bd!2sMonas!5e0!3m2!1sen!2sid!4v1620000000000!5m2!1sen!2sid" width="100%" height="100%" style="border:0; opacity: 0.6; filter: grayscale(100%) invert(100%); transition: all 0.5s;" allowfullscreen="" loading="lazy" class="group-hover:opacity-100 group-hover:filter-none"></iframe> -->
-                         <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3954.464289394333!2d109.23729647445226!3d-7.633114092382637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e65410898da204d%3A0x554884578db711af!2sJl.%20Pangrango%20No.55%2C%20Banjar%2C%20Kroya%2C%20Kec.%20Kroya%2C%20Kabupaten%20Cilacap%2C%20Jawa%20Tengah%2053282!5e0!3m2!1sen!2sid!4v1764848595777!5m2!1sen!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                     </div>
-                     <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-none w-full">
-                         <a href="https://maps.app.goo.gl/HmdzjZZx7yUSCbS8A" target="_blank" class="pointer-events-auto inline-block bg-green-600 hover:bg-green-500 text-white text-xs px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,65,0.5)] font-bold transition-all z-20">
-                             <i class="fas fa-location-arrow mr-1"></i> Open Google Maps
-                         </a>
-                     </div>
-                </div>
-                <p class="text-xs text-gray-500 mt-4 font-mono border-t border-gray-900 pt-2">Jl. Pangrango No. 55, Kec. Kroya, Cilacap</p>
+      <!-- POST 3: QURAN QUOTES -->
+      <article
+        id="post-quotes"
+        class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-quran text-yellow-500 text-lg"></i>
+            <div>
+              <p class="text-sm font-bold text-white">holy_verses</p>
+              <p class="text-[10px] text-gray-400">Sacred Data</p>
             </div>
-        </article>
+          </div>
+        </div>
+        <div
+          class="p-10 bg-gradient-to-b from-gray-900 to-black text-center flex flex-col justify-center items-center relative overflow-hidden"
+        >
+          <div
+            class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent"
+          ></div>
 
-        <!-- POST 6: GALLERY -->
-        <article id="post-gallery" class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-images text-purple-500 text-lg"></i>
-                    <div>
-                        <p class="text-sm font-bold text-white">visual_database</p>
-                        <p class="text-[10px] text-gray-400">Pre-wedding Cache</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-1 p-1" id="gallery-grid">
-                <!-- Using hover scale and z-index for pop-out effect -->
-                <div class="aspect-square bg-gray-800 overflow-hidden relative group">
-                    <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb1.jpg?w=300" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img" onclick="openLightbox(this)">
-                </div>
-                <div class="aspect-square bg-gray-800 overflow-hidden relative group">
-                    <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb2.jpg?w=300" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img" onclick="openLightbox(this)">
-                </div>
-                <div class="aspect-square bg-gray-800 overflow-hidden relative group">
-                    <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb3.jpg?w=300" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img" onclick="openLightbox(this)">
-                </div>
-                <!-- Big item -->
-                <div class="col-span-2 row-span-2 bg-gray-800 overflow-hidden relative group">
-                    <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb7.jpg?w=500" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img" onclick="openLightbox(this)">
-                    <div class="absolute bottom-2 right-2 bg-black bg-opacity-50 px-2 rounded text-[10px] text-white backdrop-blur">Featured</div>
-                </div>
-                <div class="aspect-square bg-gray-800 overflow-hidden relative group">
-                    <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb4.jpg?w=300" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img" onclick="openLightbox(this)">
-                </div>
-                <div class="aspect-square bg-gray-800 overflow-hidden relative group">
-                    <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb5.jpg?w=300" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img" onclick="openLightbox(this)">
-                </div>
-            </div>
-        </article>
+          <i class="fas fa-quote-left text-4xl text-gray-800 mb-4"></i>
+          <div class="mb-8 relative z-10">
+            <p
+              class="text-yellow-100 font-serif text-xl italic mb-4 leading-relaxed"
+            >
+              "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan
+              pasangan-pasangan untukmu dari jenismu sendiri..."
+            </p>
+            <p
+              class="text-xs text-green-500 font-mono tracking-widest border border-green-900 inline-block px-3 py-1 rounded bg-black"
+            >
+              [QS. Ar-Rum: 21]
+            </p>
+          </div>
+          <div class="w-20 h-0.5 bg-gray-700 mb-8 rounded-full"></div>
+          <div class="relative z-10">
+            <p class="text-gray-400 font-serif italic mb-3 text-sm">
+              "Dan segala sesuatu Kami ciptakan berpasang-pasangan supaya kamu
+              mengingat kebesaran Allah."
+            </p>
+            <p class="text-xs text-green-500 font-mono tracking-widest">
+              [QS. Ad-Dhariyat: 49]
+            </p>
+          </div>
+          <i class="fas fa-quote-right text-4xl text-gray-800 mt-4"></i>
+        </div>
+      </article>
 
-        <!-- POST 7: GIFT (Shimmer Effect Added) -->
-        <article id="post-gift" class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-shopping-bag text-white text-lg"></i>
-                    <div>
-                        <p class="text-sm font-bold text-white">wedding_gift</p>
-                        <p class="text-[10px] text-gray-400">Digital Envelope</p>
-                    </div>
+      <!-- POST 4: LOVE STORY -->
+      <article
+        id="post-lovestory"
+        class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-history text-blue-400 text-lg"></i>
+            <div>
+              <p class="text-sm font-bold text-white">system_logs</p>
+              <p class="text-[10px] text-gray-400">Connection History</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-black p-6 relative">
+          <!-- Glowing Line -->
+          <div
+            class="absolute left-[34px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-green-500 via-yellow-500 to-transparent shadow-[0_0_10px_#00ff41]"
+          ></div>
+
+          <div class="space-y-8 ml-2">
+            <!-- 1 -->
+            <div class="ml-8 relative group reveal-on-scroll stagger-delay-1">
+              <span
+                class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-green-500 border-4 border-black shadow-[0_0_10px_#00ff41] z-10 group-hover:scale-125 transition-transform"
+              ></span>
+              <div
+                class="bg-gray-900 p-4 rounded-lg border-l-2 border-green-500 hover:bg-gray-800 transition-colors"
+              >
+                <div class="flex justify-between items-center mb-1">
+                  <h4 class="text-white font-bold">Initial Handshake</h4>
+                  <span class="text-xs text-green-500 font-mono">2024</span>
                 </div>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  Bertemu di dunia maya. Laptop error mempertemukan logika &
+                  kode.
+                </p>
+              </div>
             </div>
-
-            <div class="grid grid-cols-2 gap-3 bg-gray-900 p-4">
-                <!-- BCA Card -->
-                <div class="bg-gradient-to-br from-gray-900 to-black p-6 flex flex-col items-center justify-center text-center aspect-square relative rounded-xl border border-gray-700 shadow-lg transform hover:-translate-y-1 transition-transform group overflow-hidden">
-                    <div class="shimmer-effect"></div> <!-- Shimmer -->
-                    <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"></div>
-                    <i class="fas fa-university text-3xl text-blue-500 mb-3 group-hover:scale-110 transition-transform relative z-10"></i>
-                    <p class="font-bold text-white text-sm relative z-10">BCA</p>
-                    <p class="text-xs text-gray-400 mb-3 relative z-10">a.n Aji Pratama</p>
-                    <button onclick="copyText('1234567890')" class="relative z-10 bg-gray-800 hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded-full border border-gray-600 transition-colors flex items-center">
-                        <i class="fas fa-copy mr-1"></i> Copy
-                    </button>
+            <!-- 2 -->
+            <div class="ml-8 relative group reveal-on-scroll stagger-delay-2">
+              <span
+                class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-yellow-500 border-4 border-black shadow-[0_0_10px_#d4af37] z-10 group-hover:scale-125 transition-transform"
+              ></span>
+              <div
+                class="bg-gray-900 p-4 rounded-lg border-l-2 border-yellow-500 hover:bg-gray-800 transition-colors"
+              >
+                <div class="flex justify-between items-center mb-1">
+                  <h4 class="text-white font-bold">Solving Variables</h4>
+                  <span class="text-xs text-yellow-500 font-mono">2025</span>
                 </div>
-                <!-- MANDIRI Card -->
-                <div class="bg-gradient-to-br from-gray-900 to-black p-6 flex flex-col items-center justify-center text-center aspect-square relative rounded-xl border border-gray-700 shadow-lg transform hover:-translate-y-1 transition-transform group overflow-hidden">
-                    <div class="shimmer-effect" style="animation-delay: 1.5s;"></div> <!-- Shimmer Delayed -->
-                    <div class="absolute inset-0 bg-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"></div>
-                    <i class="fas fa-wallet text-3xl text-yellow-500 mb-3 group-hover:scale-110 transition-transform relative z-10"></i>
-                    <p class="font-bold text-white text-sm relative z-10">Mandiri</p>
-                    <p class="text-xs text-gray-400 mb-3 relative z-10">a.n Yesi Lintang</p>
-                    <button onclick="copyText('0987654321')" class="relative z-10 bg-gray-800 hover:bg-yellow-600 text-white text-[10px] px-3 py-1.5 rounded-full border border-gray-600 transition-colors flex items-center">
-                         <i class="fas fa-copy mr-1"></i> Copy
-                    </button>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  Mulai pendekatan. Mencari nilai X (Rindu) dan Y (Pertemuan).
+                </p>
+              </div>
+            </div>
+            <!-- 3 -->
+            <div class="ml-8 relative group reveal-on-scroll stagger-delay-3">
+              <span
+                class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-green-500 border-4 border-black shadow-[0_0_10px_#00ff41] z-10 group-hover:scale-125 transition-transform"
+              ></span>
+              <div
+                class="bg-gray-900 p-4 rounded-lg border-l-2 border-green-500 hover:bg-gray-800 transition-colors"
+              >
+                <div class="flex justify-between items-center mb-1">
+                  <h4 class="text-white font-bold">Encryption Key</h4>
+                  <span class="text-xs text-green-500 font-mono">2025</span>
                 </div>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  Resmi berkomitmen. Saling menjaga hati seperti menjaga server
+                  root.
+                </p>
+              </div>
             </div>
-            
-            <div class="p-4 bg-black">
-                <div class="border border-dashed border-gray-700 rounded-lg p-4 flex items-center gap-4 bg-gray-900 bg-opacity-50">
-                    <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-green-500">
-                        <i class="fas fa-box-open text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-white uppercase tracking-wider">Kirim Kado Fisik</p>
-                        <p class="text-xs text-gray-400 mt-1 font-mono">Jl. Pangrango No. 55, Kec. Kroya, Cilacap, Jawa Tengah</p>
-                    </div>
+            <!-- 4 -->
+            <div class="ml-8 relative group reveal-on-scroll stagger-delay-4">
+              <span
+                class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-white border-4 border-black animate-pulse shadow-[0_0_15px_white] z-10"
+              ></span>
+              <div
+                class="bg-gray-800 p-4 rounded-lg border-l-2 border-white shadow-lg transform translate-x-1"
+              >
+                <div class="flex justify-between items-center mb-1">
+                  <h4 class="text-white font-bold text-lg">System Merge</h4>
+                  <span
+                    class="text-xs text-white font-mono bg-red-600 px-2 rounded"
+                    >NOW</span
+                  >
                 </div>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                  Menuju pelaminan. Two Databases, One Server.
+                </p>
+              </div>
             </div>
-        </article>
+          </div>
+        </div>
+      </article>
 
-        <!-- POST 8: WISHES -->
-        <article id="post-comments" class="bg-black mb-24 reveal-on-scroll">
-            <div class="flex justify-between items-center p-3 border-t border-gray-900">
-                <p class="text-sm font-bold text-white">Guest Wishes</p>
-                <i class="far fa-paper-plane text-white animate-pulse"></i>
+      <!-- POST 5: TIME & LOCATION -->
+      <article
+        id="post-location"
+        class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-calendar-alt text-red-500 text-lg"></i>
+            <div>
+              <p class="text-sm font-bold text-white">event_scheduler</p>
+              <p class="text-[10px] text-gray-400">Time & Space Coordinates</p>
             </div>
-
-            <div class="px-3 pb-4">
-                <form class="flex flex-col gap-3 mb-6 relative z-10" onsubmit="handlePostComment(event)">
-                    <div class="flex gap-3 items-center">
-                         <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-800 to-gray-700 flex-shrink-0 flex items-center justify-center border border-gray-600">
-                            <i class="fas fa-user text-sm text-gray-400"></i>
-                         </div>
-                         <div class="flex-1">
-                             <input id="input-name" type="text" placeholder="Your Name" class="bg-gray-900 text-white text-sm rounded-lg px-4 py-2.5 w-full border border-gray-700 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 font-bold transition-all" required>
-                         </div>
-                    </div>
-                    <div class="pl-12 space-y-2">
-                        <textarea id="input-message" placeholder="Write a wish..." class="bg-gray-900 text-white text-sm rounded-lg px-4 py-3 w-full border border-gray-700 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 min-h-[80px] transition-all" required></textarea>
-                        
-                        <div class="flex justify-between items-center">
-                             <select id="input-attendance" class="bg-black text-xs text-gray-300 border border-gray-700 rounded-md px-3 py-1.5 focus:border-green-500 outline-none">
-                                 <option value="Hadir">Akan Hadir</option>
-                                 <option value="Tidak Hadir">Berhalangan</option>
-                             </select>
-                             <button id="btn-post" type="submit" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-6 py-2 rounded-full shadow-lg transition-all transform hover:scale-105">
-                                 <i class="fas fa-paper-plane mr-1"></i> Post
-                             </button>
-                        </div>
-                    </div>
-                </form>
-
-                <div class="border-t border-gray-800 pt-4">
-                     <p id="comment-count" class="text-xs text-green-500 mb-4 font-mono tracking-wide">Syncing database...</p>
-                     <div id="comment-list" class="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar"></div>
-                </div>
-            </div>
-        </article>
-
-        <!-- BOTTOM NAV -->
-        <nav class="fixed bottom-0 w-full max-w-[480px] bg-black/90 backdrop-blur-lg border-t border-gray-800 flex justify-around items-center py-4 z-40 pb-6 md:pb-4 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
-            <i class="fas fa-home text-xl text-white hover:text-green-500 transition-colors transform hover:scale-110" onclick="scrollToId('main-app')"></i>
-            <i class="fas fa-search text-xl text-gray-500 hover:text-white transition-colors"></i>
-            <div class="w-10 h-10 bg-gradient-to-tr from-green-500 to-green-700 rounded-full flex items-center justify-center cursor-pointer shadow-[0_0_15px_#00ff41] transform -translate-y-2 hover:-translate-y-3 transition-transform" onclick="scrollToId('post-comments')">
-                <i class="fas fa-plus text-sm text-black"></i>
-            </div>
-            <i class="fas fa-gift text-xl text-gray-500 hover:text-yellow-500 transition-colors" onclick="scrollToId('post-gift')"></i>
-            <div class="w-7 h-7 rounded-full bg-gray-700 overflow-hidden border border-gray-500">
-                <img src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb1.jpg" class="w-full h-full">
-            </div>
-        </nav>
-
-        <!-- LIGHTBOX -->
-        <div id="lightbox" class="fixed inset-0 z-[100] bg-black bg-opacity-95 flex items-center justify-center hidden backdrop-blur-xl" onclick="closeLightbox(event)">
-            <button class="absolute top-4 right-4 text-white text-3xl hover:text-red-500 transition z-50 bg-white/10 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur" onclick="closeLightbox(event, true)">&times;</button>
-            
-            <!-- Play/Pause Button -->
-            <button id="lightbox-play-pause" class="absolute top-4 left-4 text-white text-xl p-3 rounded-full z-50 bg-white/10 backdrop-blur transition-all play-pause-btn playing" onclick="toggleSlideshow(event)">
-                <i class="fas fa-pause"></i>
-            </button>
-
-            <button onclick="changeImage(-1, event)" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-4xl p-4 hover:text-green-500 transition z-50 hidden md:block">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="relative w-full h-full flex items-center justify-center p-4">
-                 <img id="lightbox-img" src="" class="max-w-full max-h-[85vh] object-contain transform transition-all duration-300 scale-95 shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-lg">
-            </div>
-            <button onclick="changeImage(1, event)" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-4xl p-4 hover:text-green-500 transition z-50 hidden md:block">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+          </div>
         </div>
 
+        <!-- Countdown -->
+        <div class="bg-gray-900 p-6 border-b border-black">
+          <div class="flex justify-center gap-3 font-mono text-center">
+            <div
+              class="bg-black p-3 rounded-lg w-16 border-b-4 border-green-500 shadow-lg transform hover:-translate-y-1 transition-transform"
+            >
+              <span id="d" class="block text-2xl text-green-500 font-bold"
+                >00</span
+              >
+              <span class="text-[10px] text-gray-500 uppercase">Days</span>
+            </div>
+            <div
+              class="bg-black p-3 rounded-lg w-16 border-b-4 border-yellow-500 shadow-lg transform hover:-translate-y-1 transition-transform"
+            >
+              <span id="h" class="block text-2xl text-yellow-500 font-bold"
+                >00</span
+              >
+              <span class="text-[10px] text-gray-500 uppercase">Hours</span>
+            </div>
+            <div
+              class="bg-black p-3 rounded-lg w-16 border-b-4 border-green-500 shadow-lg transform hover:-translate-y-1 transition-transform"
+            >
+              <span id="m" class="block text-2xl text-green-500 font-bold"
+                >00</span
+              >
+              <span class="text-[10px] text-gray-500 uppercase">Min</span>
+            </div>
+            <div
+              class="bg-black p-3 rounded-lg w-16 border-b-4 border-yellow-500 shadow-lg transform hover:-translate-y-1 transition-transform"
+            >
+              <span id="s" class="block text-2xl text-yellow-500 font-bold"
+                >00</span
+              >
+              <span class="text-[10px] text-gray-500 uppercase">Sec</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="p-6 bg-black text-center">
+          <h3 class="font-script text-4xl text-white mb-6">
+            Selasa, 20 Oktober 2026
+          </h3>
+
+          <div class="mb-8 px-2">
+            <div class="flex justify-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full border border-yellow-600 flex items-center justify-center bg-gray-900"
+              >
+                <i class="fas fa-praying-hands text-yellow-500 text-xl"></i>
+              </div>
+            </div>
+            <p
+              class="font-serif italic text-gray-300 leading-loose text-sm tracking-wide"
+            >
+              "Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila
+              Bapak/Ibu/Saudara/i berkenan hadir untuk memberikan doa restu
+              kepada kedua mempelai"
+            </p>
+            <div
+              class="w-24 h-px bg-gradient-to-r from-transparent via-green-500 to-transparent mx-auto mt-6"
+            ></div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div
+              class="bg-gray-900 p-4 rounded-lg border border-gray-800 hover:border-green-500 transition-colors"
+            >
+              <i class="fas fa-ring text-green-500 mb-2 text-xl"></i>
+              <p class="text-green-500 font-bold text-sm tracking-widest">
+                AKAD NIKAH
+              </p>
+              <p class="text-xs text-white mt-1">08:00 - 10:00 WIB</p>
+            </div>
+            <div
+              class="bg-gray-900 p-4 rounded-lg border border-gray-800 hover:border-yellow-500 transition-colors"
+            >
+              <i class="fas fa-glass-cheers text-yellow-500 mb-2 text-xl"></i>
+              <p class="text-yellow-500 font-bold text-sm tracking-widest">
+                RESEPSI
+              </p>
+              <p class="text-xs text-white mt-1">11:00 - Selesai</p>
+            </div>
+          </div>
+
+          <div
+            class="relative h-64 shadow-2xl border border-gray-800 group rounded-xl"
+          >
+            <div class="absolute inset-0 rounded-xl overflow-hidden">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3954.464289394333!2d109.23729647445226!3d-7.633114092382637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e65410898da204d%3A0x554884578db711af!2sJl.%20Pangrango%20No.55%2C%20Banjar%2C%20Kroya%2C%20Kec.%20Kroya%2C%20Kabupaten%20Cilacap%2C%20Jawa%20Tengah%2053282!5e0!3m2!1sen!2sid!4v1764848595777!5m2!1sen!2sid"
+                width="600"
+                height="450"
+                style="border: 0"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+            <div
+              class="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-none w-full"
+            >
+              <a
+                href="https://maps.app.goo.gl/HmdzjZZx7yUSCbS8A"
+                target="_blank"
+                class="pointer-events-auto inline-block bg-green-600 hover:bg-green-500 text-white text-xs px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,65,0.5)] font-bold transition-all z-20"
+              >
+                <i class="fas fa-location-arrow mr-1"></i> Open Google Maps
+              </a>
+            </div>
+          </div>
+          <p
+            class="text-xs text-gray-500 mt-4 font-mono border-t border-gray-900 pt-2"
+          >
+            Jl. Pangrango No. 55, Kec. Kroya, Cilacap
+          </p>
+        </div>
+      </article>
+
+      <!-- POST 6: GALLERY -->
+      <article
+        id="post-gallery"
+        class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-images text-purple-500 text-lg"></i>
+            <div>
+              <p class="text-sm font-bold text-white">visual_database</p>
+              <p class="text-[10px] text-gray-400">Pre-wedding Cache</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1 p-1" id="gallery-grid">
+          <!-- Using hover scale and z-index for pop-out effect -->
+          <div class="aspect-square bg-gray-800 overflow-hidden relative group">
+            <img
+              src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb1.jpg?w=300"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img"
+              onclick="openLightbox(this)"
+            />
+          </div>
+          <div class="aspect-square bg-gray-800 overflow-hidden relative group">
+            <img
+              src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb2.jpg?w=300"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img"
+              onclick="openLightbox(this)"
+            />
+          </div>
+          <div class="aspect-square bg-gray-800 overflow-hidden relative group">
+            <img
+              src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb3.jpg?w=300"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img"
+              onclick="openLightbox(this)"
+            />
+          </div>
+          <!-- Big item -->
+          <div
+            class="col-span-2 row-span-2 bg-gray-800 overflow-hidden relative group"
+          >
+            <img
+              src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb7.jpg?w=500"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img"
+              onclick="openLightbox(this)"
+            />
+            <div
+              class="absolute bottom-2 right-2 bg-black bg-opacity-50 px-2 rounded text-[10px] text-white backdrop-blur"
+            >
+              Featured
+            </div>
+          </div>
+          <div class="aspect-square bg-gray-800 overflow-hidden relative group">
+            <img
+              src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb4.jpg?w=300"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img"
+              onclick="openLightbox(this)"
+            />
+          </div>
+          <div class="aspect-square bg-gray-800 overflow-hidden relative group">
+            <img
+              src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb5.jpg?w=300"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer gallery-img"
+              onclick="openLightbox(this)"
+            />
+          </div>
+        </div>
+      </article>
+
+      <!-- POST 7: GIFT -->
+      <article
+        id="post-gift"
+        class="bg-black mb-4 border-b border-gray-900 reveal-on-scroll"
+      >
+        <div class="flex justify-between items-center p-3">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-shopping-bag text-white text-lg"></i>
+            <div>
+              <p class="text-sm font-bold text-white">wedding_gift</p>
+              <p class="text-[10px] text-gray-400">Digital Envelope</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 bg-gray-900 p-4">
+          <!-- BCA Card -->
+          <div
+            class="bg-gradient-to-br from-gray-900 to-black p-6 flex flex-col items-center justify-center text-center aspect-square relative rounded-xl border border-gray-700 shadow-lg transform hover:-translate-y-1 transition-transform group overflow-hidden"
+          >
+            <div class="shimmer-effect"></div>
+            <!-- Shimmer -->
+            <div
+              class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"
+            ></div>
+            <i
+              class="fas fa-university text-3xl text-blue-500 mb-3 group-hover:scale-110 transition-transform relative z-10"
+            ></i>
+            <p class="font-bold text-white text-sm relative z-10">BCA</p>
+            <p class="text-xs text-gray-400 mb-3 relative z-10">
+              a.n Aji Pratama
+            </p>
+            <button
+              onclick="copyText('1234567890')"
+              class="relative z-10 bg-gray-800 hover:bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded-full border border-gray-600 transition-colors flex items-center"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+          <!-- MANDIRI Card -->
+          <div
+            class="bg-gradient-to-br from-gray-900 to-black p-6 flex flex-col items-center justify-center text-center aspect-square relative rounded-xl border border-gray-700 shadow-lg transform hover:-translate-y-1 transition-transform group overflow-hidden"
+          >
+            <div class="shimmer-effect" style="animation-delay: 1.5s"></div>
+            <!-- Shimmer Delayed -->
+            <div
+              class="absolute inset-0 bg-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity rounded-xl"
+            ></div>
+            <i
+              class="fas fa-wallet text-3xl text-yellow-500 mb-3 group-hover:scale-110 transition-transform relative z-10"
+            ></i>
+            <p class="font-bold text-white text-sm relative z-10">Mandiri</p>
+            <p class="text-xs text-gray-400 mb-3 relative z-10">
+              a.n Yesi Lintang
+            </p>
+            <button
+              onclick="copyText('0987654321')"
+              class="relative z-10 bg-gray-800 hover:bg-yellow-600 text-white text-[10px] px-3 py-1.5 rounded-full border border-gray-600 transition-colors flex items-center"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="p-4 bg-black">
+          <div
+            class="border border-dashed border-gray-700 rounded-lg p-4 flex items-center gap-4 bg-gray-900 bg-opacity-50"
+          >
+            <div
+              class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-green-500"
+            >
+              <i class="fas fa-box-open text-xl"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-white uppercase tracking-wider">
+                Kirim Kado Fisik
+              </p>
+              <p class="text-xs text-gray-400 mt-1 font-mono">
+                Jl. Pangrango No. 55, Kec. Kroya, Cilacap, Jawa Tengah
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- POST 8: WISHES -->
+      <article id="post-comments" class="bg-black mb-24 reveal-on-scroll">
+        <div
+          class="flex justify-between items-center p-3 border-t border-gray-900"
+        >
+          <p class="text-sm font-bold text-white">Guest Wishes</p>
+          <i class="far fa-paper-plane text-white animate-pulse"></i>
+        </div>
+
+        <div class="px-3 pb-4">
+          <form
+            class="flex flex-col gap-3 mb-6 relative z-10"
+            onsubmit="handlePostComment(event)"
+          >
+            <div class="flex gap-3 items-center">
+              <div
+                class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-800 to-gray-700 flex-shrink-0 flex items-center justify-center border border-gray-600"
+              >
+                <i class="fas fa-user text-sm text-gray-400"></i>
+              </div>
+              <div class="flex-1">
+                <input
+                  id="input-name"
+                  type="text"
+                  placeholder="Your Name"
+                  class="bg-gray-900 text-white text-sm rounded-lg px-4 py-2.5 w-full border border-gray-700 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 font-bold transition-all"
+                  required
+                />
+              </div>
+            </div>
+            <div class="pl-12 space-y-2">
+              <textarea
+                id="input-message"
+                placeholder="Write a wish..."
+                class="bg-gray-900 text-white text-sm rounded-lg px-4 py-3 w-full border border-gray-700 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 min-h-[80px] transition-all"
+                required
+              ></textarea>
+
+              <div class="flex justify-between items-center">
+                <select
+                  id="input-attendance"
+                  class="bg-black text-xs text-gray-300 border border-gray-700 rounded-md px-3 py-1.5 focus:border-green-500 outline-none"
+                >
+                  <option value="Hadir">Akan Hadir</option>
+                  <option value="Tidak Hadir">Berhalangan</option>
+                </select>
+                <button
+                  id="btn-post"
+                  type="submit"
+                  class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-6 py-2 rounded-full shadow-lg transition-all transform hover:scale-105"
+                >
+                  <i class="fas fa-paper-plane mr-1"></i> Post
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div class="border-t border-gray-800 pt-4">
+            <p
+              id="comment-count"
+              class="text-xs text-green-500 mb-4 font-mono tracking-wide"
+            >
+              Syncing database...
+            </p>
+            <div
+              id="comment-list"
+              class="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar"
+            ></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- BOTTOM NAV -->
+      <nav
+        class="fixed bottom-0 w-full max-w-[480px] bg-black/90 backdrop-blur-lg border-t border-gray-800 flex justify-around items-center py-4 z-40 pb-6 md:pb-4 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]"
+      >
+        <i
+          class="fas fa-home text-xl text-white hover:text-green-500 transition-colors transform hover:scale-110"
+          onclick="scrollToId('main-app')"
+        ></i>
+
+        <!-- Icon Search memunculkan Pop Up Motivasi -->
+        <i
+          class="fas fa-search text-xl text-gray-500 hover:text-yellow-500 transition-colors cursor-pointer"
+          onclick="showMotivationPopup()"
+        ></i>
+
+        <div
+          class="w-10 h-10 bg-gradient-to-tr from-green-500 to-green-700 rounded-full flex items-center justify-center cursor-pointer shadow-[0_0_15px_#00ff41] transform -translate-y-2 hover:-translate-y-3 transition-transform"
+          onclick="scrollToId('post-comments')"
+        >
+          <i class="fas fa-plus text-sm text-black"></i>
+        </div>
+        <i
+          class="fas fa-gift text-xl text-gray-500 hover:text-yellow-500 transition-colors"
+          onclick="scrollToId('post-gift')"
+        ></i>
+        <div
+          class="w-7 h-7 rounded-full bg-gray-700 overflow-hidden border border-gray-500"
+        >
+          <img
+            src="https://raw.githubusercontent.com/ajipratama11/undangan/main/gb1.jpg"
+            class="w-full h-full"
+          />
+        </div>
+      </nav>
+
+      <!-- LIGHTBOX -->
+      <div
+        id="lightbox"
+        class="fixed inset-0 z-[100] bg-black bg-opacity-95 flex items-center justify-center hidden backdrop-blur-xl"
+        onclick="closeLightbox(event)"
+      >
+        <button
+          class="absolute top-4 right-4 text-white text-3xl hover:text-red-500 transition z-50 bg-white/10 rounded-full w-12 h-12 flex items-center justify-center backdrop-blur"
+          onclick="closeLightbox(event, true)"
+        >
+          &times;
+        </button>
+        <button
+          id="lightbox-play-pause"
+          class="absolute top-4 left-4 text-white text-xl p-3 rounded-full z-50 bg-white/10 backdrop-blur transition-all play-pause-btn playing"
+          onclick="toggleSlideshow(event)"
+        >
+          <i class="fas fa-pause"></i>
+        </button>
+        <button
+          onclick="changeImage(-1, event)"
+          class="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-4xl p-4 hover:text-green-500 transition z-50 hidden md:block"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div
+          class="relative w-full h-full flex items-center justify-center p-4"
+        >
+          <img
+            id="lightbox-img"
+            src=""
+            class="max-w-full max-h-[85vh] object-contain transform transition-all duration-300 scale-95 shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-lg"
+          />
+        </div>
+        <button
+          onclick="changeImage(1, event)"
+          class="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-4xl p-4 hover:text-green-500 transition z-50 hidden md:block"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- MOTIVATION POPUP MODAL -->
+      <div
+        id="motivation-popup"
+        class="fixed inset-0 z-[100] flex items-center justify-center hidden bg-black/80 backdrop-blur-sm px-6"
+      >
+        <div
+          class="bg-gray-900 border border-yellow-500/30 rounded-2xl p-6 max-w-sm w-full relative shadow-[0_0_30px_rgba(212,175,55,0.2)] transform scale-95 transition-all duration-300"
+          id="motivation-card"
+        >
+          <button
+            onclick="closeMotivationPopup()"
+            class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center border border-gray-600 hover:bg-red-500 transition-colors"
+          >
+            &times;
+          </button>
+          <div class="text-center">
+            <div
+              class="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-4 border border-yellow-500/30"
+            >
+              <i class="fas fa-heart text-yellow-500 text-xl"></i>
+            </div>
+            <h3
+              class="font-elegant text-white text-lg mb-4 border-b border-gray-800 pb-2"
+            >
+              Marriage Wisdom
+            </h3>
+            <p
+              id="motivation-text"
+              class="text-gray-300 font-serif italic mb-6 leading-relaxed"
+            >
+              "Loading wisdom..."
+            </p>
+            <button
+              onclick="randomMotivation()"
+              class="w-full py-2 bg-gradient-to-r from-green-600 to-green-800 rounded-lg text-white font-mono text-xs hover:from-green-500 hover:to-green-700 transition-all"
+            >
+              <i class="fas fa-sync-alt mr-2"></i> KATA LAIN
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            createBackgroundElements();
+      // --- YOUTUBE API SETUP ---
+      let player;
+      function loadYoutubeAPI() {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName("script")[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      }
 
-            // 1. GUEST NAME LOGIC
-            const params = new URLSearchParams(window.location.search);
-            const guestName = params.get('to');
-            if (guestName) {
-                const cleanName = guestName.replace(/[^a-zA-Z0-9\s.,-]/g, ''); 
-                const guestDisplay = document.getElementById('guest-name-display');
-                if(guestDisplay) {
-                    guestDisplay.innerText = cleanName;
-                    guestDisplay.classList.add('text-green-400');
-                }
-                const inputName = document.getElementById('input-name');
-                if(inputName) inputName.value = cleanName;
+      // Dipanggil otomatis oleh API YouTube saat siap
+      window.onYouTubeIframeAPIReady = function () {
+        player = new YT.Player("youtube-player", {
+          height: "0",
+          width: "0",
+          videoId: YOUTUBE_CONFIG.videoId,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            loop: 1,
+            start: YOUTUBE_CONFIG.startTime,
+            playlist: YOUTUBE_CONFIG.videoId, // Penting untuk looping
+          },
+          events: {
+            onReady: onPlayerReady,
+          },
+        });
+      };
+
+      function onPlayerReady(event) {
+        event.target.setVolume(YOUTUBE_CONFIG.volume);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadYoutubeAPI();
+        createBackgroundElements();
+
+        // 1. GUEST NAME LOGIC
+        const params = new URLSearchParams(window.location.search);
+        const guestName = params.get("to");
+        if (guestName) {
+          const cleanName = guestName.replace(/[^a-zA-Z0-9\s.,-]/g, "");
+          const guestDisplay = document.getElementById("guest-name-display");
+          if (guestDisplay) {
+            guestDisplay.innerText = cleanName;
+            guestDisplay.classList.add("text-green-400");
+          }
+          const inputName = document.getElementById("input-name");
+          if (inputName) inputName.value = cleanName;
+        }
+
+        startCountdown();
+        initLightboxSwipe();
+        init3DTilt();
+        initScrollObserver();
+        initAutoSlide();
+        initIntroAnimation();
+      });
+
+      // --- MOTIVATION POPUP LOGIC (DIPERBAIKI) ---
+      const quotes = [
+        "Pernikahan bukan tentang menemukan orang yang tepat, tetapi menjadi orang yang tepat.",
+        "Cinta sejati tidak memiliki akhir yang bahagia, karena cinta sejati tidak pernah berakhir.",
+        "Pernikahan yang sukses adalah jatuh cinta berkali-kali, selalu dengan orang yang sama.",
+        "Komitmen adalah tindakan, bukan kata-kata.",
+        "Dalam pernikahan, kebahagiaan pasanganmu adalah kebahagiaanmu juga.",
+        "Sabar adalah kunci dari segala masalah dalam rumah tangga.",
+        "Mencintai seseorang adalah memberikan mereka kekuatan untuk menghancurkanmu, tapi mempercayai mereka untuk tidak melakukannya.",
+        "Rumah tangga adalah tempat di mana cinta dibangun setiap hari dengan doa dan usaha.",
+        "Jadilah rumah untuk pasanganmu pulang, dan jadilah tujuan untuk dia melangkah.",
+      ];
+
+      // Expose to window agar bisa diakses onclick
+      window.showMotivationPopup = function () {
+        const popup = document.getElementById("motivation-popup");
+        const card = document.getElementById("motivation-card");
+        if (popup && card) {
+          popup.classList.remove("hidden");
+          window.randomMotivation();
+          setTimeout(() => {
+            card.classList.remove("scale-95");
+            card.classList.add("scale-100");
+          }, 10);
+        }
+      };
+
+      window.closeMotivationPopup = function () {
+        const popup = document.getElementById("motivation-popup");
+        const card = document.getElementById("motivation-card");
+        if (popup && card) {
+          card.classList.remove("scale-100");
+          card.classList.add("scale-95");
+          setTimeout(() => {
+            popup.classList.add("hidden");
+          }, 200);
+        }
+      };
+
+      window.randomMotivation = function () {
+        const textEl = document.getElementById("motivation-text");
+        if (textEl) {
+          const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+          textEl.style.opacity = 0;
+          setTimeout(() => {
+            textEl.innerText = `"${randomQuote}"`;
+            textEl.style.opacity = 1;
+          }, 300);
+        }
+      };
+
+      // Close popup when clicking outside card
+      const motivationPopup = document.getElementById("motivation-popup");
+      if (motivationPopup) {
+        motivationPopup.addEventListener("click", function (e) {
+          if (e.target === this) {
+            window.closeMotivationPopup();
+          }
+        });
+      }
+
+      // --- INTRO CANVAS ANIMATION ---
+      function initIntroAnimation() {
+        const canvas = document.getElementById("intro-canvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+
+        let width, height;
+        let frame = 0;
+        let phase = 0; // 0: Approach, 1: Interaction, 2: Merge/Result
+
+        const binaryChars = ["0", "1"];
+        const mathChars = ["∑", "π", "∫", "√", "∞", "x", "y", "≠", "≈"];
+        let particles = [];
+
+        let cyberPos = { x: -100, y: 0, targetX: 0 };
+        let mathPos = { x: 0, y: 0, targetX: 0 };
+        let lockScale = 0;
+
+        function resize() {
+          width = canvas.width = window.innerWidth;
+          height = canvas.height = window.innerHeight;
+          if (phase === 0) {
+            cyberPos.targetX = width * 0.4;
+            mathPos.targetX = width * 0.6;
+            cyberPos.y = height * 0.7;
+            mathPos.y = height * 0.7;
+            if (cyberPos.x < 0) cyberPos.x = -100;
+            if (mathPos.x === 0) mathPos.x = width + 100;
+          } else {
+            cyberPos.x = width * 0.45;
+            mathPos.x = width * 0.55;
+            cyberPos.y = height * 0.7;
+            mathPos.y = height * 0.7;
+          }
+        }
+
+        class Particle {
+          constructor(type) {
+            this.type = type;
+            this.reset();
+          }
+          reset() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.speed = Math.random() * 2 + 0.5;
+            this.size = Math.random() * 14 + 10;
+            this.opacity = Math.random() * 0.5 + 0.1;
+            if (this.type === "cyber") {
+              this.char =
+                binaryChars[Math.floor(Math.random() * binaryChars.length)];
+              this.color = "#00ff00";
+              this.vx = 0;
+              this.vy = this.speed;
+            } else {
+              this.char =
+                mathChars[Math.floor(Math.random() * mathChars.length)];
+              this.color = "#0000ff";
+              this.vx = (Math.random() - 0.5) * 0.5;
+              this.vy = -this.speed * 0.5;
             }
+          }
+          update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.type === "cyber" && this.y > height) this.y = -20;
+            if (this.type === "math" && this.y < -20) this.y = height + 20;
+            if (phase === 2) {
+              const dx = width / 2 - this.x;
+              const dy = height / 2 - this.y;
+              this.x += dx * 0.02;
+              this.y += dy * 0.02;
+            }
+          }
+          draw() {
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.opacity;
+            ctx.font = `${this.size}px monospace`;
+            ctx.fillText(this.char, this.x, this.y);
+            ctx.globalAlpha = 1.0;
+          }
+        }
 
-            startCountdown();
-            initLightboxSwipe();
-            init3DTilt();
-            initScrollObserver();
-            initAutoSlide(); 
-            initIntroAnimation(); // Start Canvas Animation
+        function drawCyberGuy(x, y, isWalking) {
+          ctx.save();
+          ctx.translate(x, y);
+          const bounce = isWalking ? Math.sin(frame * 0.2) * 5 : 0;
+          ctx.translate(0, bounce);
+          ctx.fillStyle = "#1a1a1a";
+          ctx.beginPath();
+          ctx.moveTo(-25, -60);
+          ctx.lineTo(25, -60);
+          ctx.lineTo(35, 0);
+          ctx.lineTo(-35, 0);
+          ctx.fill();
+          ctx.strokeStyle = "#00ff00";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, -60);
+          ctx.lineTo(0, -20);
+          ctx.stroke();
+          ctx.fillStyle = "#ffccaa";
+          ctx.beginPath();
+          ctx.arc(0, -75, 20, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#1a1a1a";
+          ctx.beginPath();
+          ctx.arc(0, -75, 22, Math.PI, 0);
+          ctx.lineTo(22, -60);
+          ctx.lineTo(-22, -60);
+          ctx.fill();
+          ctx.fillStyle = "#00ff00";
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#00ff00";
+          ctx.fillRect(-15, -80, 30, 8);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+        }
+
+        function drawMathGirl(x, y, isWalking) {
+          ctx.save();
+          ctx.translate(x, y);
+          const bounce = isWalking ? Math.sin(frame * 0.2 + Math.PI) * 5 : 0;
+          ctx.translate(0, bounce);
+          ctx.fillStyle = "#3a3a3a";
+          ctx.beginPath();
+          ctx.moveTo(-20, -30);
+          ctx.lineTo(20, -30);
+          ctx.lineTo(30, 10);
+          ctx.lineTo(-30, 10);
+          ctx.fill();
+          ctx.fillStyle = "#ff9900";
+          ctx.fillRect(-25, -65, 50, 40);
+          ctx.fillStyle = "#ffccaa";
+          ctx.beginPath();
+          ctx.arc(0, -80, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#5a3a2a";
+          ctx.beginPath();
+          ctx.arc(0, -85, 20, Math.PI, 0);
+          ctx.arc(-15, -80, 5, 0, Math.PI * 2);
+          ctx.arc(15, -80, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        function drawBackgrounds() {
+          let splitX = width / 2;
+          ctx.fillStyle = "#050505";
+          ctx.fillRect(0, 0, width, height);
+          if (phase < 2) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(splitX, 0, width / 2, height);
+            ctx.clip();
+            ctx.fillStyle = "#f0f0f0";
+            ctx.fillRect(0, 0, width, height);
+            ctx.strokeStyle = "#add8e6";
+            ctx.lineWidth = 1;
+            const gridSize = 30;
+            ctx.beginPath();
+            for (let x = splitX; x < width; x += gridSize) {
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, height);
+            }
+            for (let y = 0; y < height; y += gridSize) {
+              ctx.moveTo(splitX, y);
+              ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+            ctx.restore();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(splitX, 0);
+            ctx.lineTo(splitX, height);
+            ctx.stroke();
+          } else {
+            ctx.strokeStyle = "rgba(0, 100, 255, 0.2)";
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+            ctx.beginPath();
+            for (let x = 0; x < width; x += gridSize) {
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, height);
+            }
+            for (let y = 0; y < height; y += gridSize) {
+              ctx.moveTo(0, y);
+              ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+          }
+          particles.forEach((p) => {
+            if (phase < 2) {
+              if (p.type === "cyber" && p.x < splitX) p.draw();
+              if (p.type === "math" && p.x > splitX) p.draw();
+            } else {
+              p.draw();
+            }
+            p.update();
+          });
+        }
+
+        function drawEncryptionLock() {
+          if (lockScale < 1) lockScale += 0.02;
+          const cx = width / 2;
+          const cy = height / 2 - 100;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(lockScale, lockScale);
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = "#00ffff";
+          ctx.fillStyle = "#00ccff";
+          ctx.fillRect(-40, 0, 80, 70);
+          ctx.strokeStyle = "#ffd700";
+          ctx.lineWidth = 12;
+          ctx.beginPath();
+          ctx.arc(0, 0, 30, Math.PI, 0);
+          ctx.stroke();
+          ctx.fillStyle = "#000";
+          ctx.font = "bold 40px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("∑", 0, 35);
+          ctx.restore();
+        }
+
+        function animate() {
+          ctx.clearRect(0, 0, width, height);
+          drawBackgrounds();
+          const isWalking = phase === 0;
+          drawCyberGuy(cyberPos.x, cyberPos.y, isWalking);
+          drawMathGirl(mathPos.x, mathPos.y, isWalking);
+          if (phase === 0) {
+            let moving = false;
+            if (cyberPos.x < cyberPos.targetX) {
+              cyberPos.x += 2;
+              moving = true;
+            }
+            if (mathPos.x > mathPos.targetX) {
+              mathPos.x -= 2;
+              moving = true;
+            }
+            if (!moving) {
+              phase = 1;
+              setTimeout(() => {
+                phase = 2;
+              }, 1000);
+            }
+          }
+          if (phase === 2) {
+            const centerX = width / 2;
+            if (cyberPos.x < centerX - 40) cyberPos.x += 1;
+            if (mathPos.x > centerX + 40) mathPos.x -= 1;
+            drawEncryptionLock();
+          }
+          frame++;
+          requestAnimationFrame(animate);
+        }
+
+        particles = [];
+        for (let i = 0; i < 50; i++) {
+          particles.push(new Particle("cyber"));
+          particles.push(new Particle("math"));
+        }
+        window.addEventListener("resize", resize);
+        resize();
+        animate();
+      }
+
+      // --- GLOBAL VARIABLES FOR SLIDESHOWS ---
+      let autoSlideInterval;
+      let lightboxSlideshowInterval;
+      let isMempelaiPaused = false;
+      let isLightboxPlaying = true;
+
+      // --- 1. MEMPELAI AUTO SLIDE LOGIC ---
+      function initAutoSlide() {
+        const carousel = document.getElementById("mempelai-carousel");
+        const section = document.getElementById("mempelai-section");
+
+        if (!carousel || !section) return;
+
+        startMempelaiSlide();
+
+        section.addEventListener("mouseenter", () => (isMempelaiPaused = true));
+        section.addEventListener(
+          "mouseleave",
+          () => (isMempelaiPaused = false)
+        );
+        section.addEventListener(
+          "touchstart",
+          () => (isMempelaiPaused = true),
+          { passive: true }
+        );
+        section.addEventListener(
+          "touchend",
+          () => setTimeout(() => (isMempelaiPaused = false), 2000),
+          { passive: true }
+        );
+
+        function startMempelaiSlide() {
+          clearInterval(autoSlideInterval);
+          autoSlideInterval = setInterval(() => {
+            if (isMempelaiPaused) return;
+
+            const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+            const itemWidth = carousel.clientWidth;
+
+            if (carousel.scrollLeft >= maxScroll - 10) {
+              carousel.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+              carousel.scrollBy({ left: itemWidth, behavior: "smooth" });
+            }
+          }, 3000);
+        }
+      }
+
+      // --- 2. LIGHTBOX AUTO SWIPE ---
+      function startLightboxSlideshow() {
+        clearInterval(lightboxSlideshowInterval);
+        isLightboxPlaying = true;
+        const btn = document.getElementById("lightbox-play-pause");
+        const icon = btn.querySelector("i");
+
+        if (icon) {
+          icon.classList.remove("fa-play");
+          icon.classList.add("fa-pause");
+        }
+        btn.classList.add("playing");
+
+        lightboxSlideshowInterval = setInterval(() => {
+          changeImage(1);
+        }, 1500);
+      }
+
+      function stopLightboxSlideshow() {
+        clearInterval(lightboxSlideshowInterval);
+        isLightboxPlaying = false;
+        const btn = document.getElementById("lightbox-play-pause");
+        const icon = btn.querySelector("i");
+        if (icon) {
+          icon.classList.remove("fa-pause");
+          icon.classList.add("fa-play");
+        }
+        btn.classList.remove("playing");
+      }
+
+      window.toggleSlideshow = function (event) {
+        if (event) event.stopPropagation();
+        if (isLightboxPlaying) {
+          stopLightboxSlideshow();
+        } else {
+          startLightboxSlideshow();
+        }
+      };
+
+      // --- 3D TILT LOGIC ---
+      function init3DTilt() {
+        const card = document.getElementById("tilt-card");
+        const container = document.getElementById("lock-screen");
+
+        if (!card || !container) return;
+
+        container.addEventListener("mousemove", (e) => {
+          const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
+          const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
+          card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
         });
 
-        // --- INTRO CANVAS ANIMATION ---
-        function initIntroAnimation() {
-            const canvas = document.getElementById('intro-canvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            let width, height;
-            let frame = 0;
-            let phase = 0; // 0: Approach, 1: Interaction, 2: Merge/Result
-            
-            const binaryChars = ['0', '1'];
-            const mathChars = ['∑', 'π', '∫', '√', '∞', 'x', 'y', '≠', '≈'];
-            let particles = [];
-            
-            let cyberPos = { x: -100, y: 0, targetX: 0 };
-            let mathPos = { x: 0, y: 0, targetX: 0 };
-            let lockScale = 0;
+        container.addEventListener("mouseleave", () => {
+          card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
 
-            function resize() {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-                if(phase === 0) {
-                    cyberPos.targetX = width * 0.4;
-                    mathPos.targetX = width * 0.6;
-                    cyberPos.y = height * 0.7;
-                    mathPos.y = height * 0.7;
-                    if(cyberPos.x < 0) cyberPos.x = -100;
-                    if(mathPos.x === 0) mathPos.x = width + 100;
-                } else {
-                    cyberPos.x = width * 0.45;
-                    mathPos.x = width * 0.55;
-                    cyberPos.y = height * 0.7;
-                    mathPos.y = height * 0.7;
-                }
-            }
+        container.addEventListener(
+          "touchmove",
+          (e) => {
+            const touch = e.touches[0];
+            const xAxis = (window.innerWidth / 2 - touch.pageX) / 20;
+            const yAxis = (window.innerHeight / 2 - touch.pageY) / 20;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+          },
+          { passive: true }
+        );
+        container.addEventListener("touchend", () => {
+          card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+      }
 
-            class Particle {
-                constructor(type) { this.type = type; this.reset(); }
-                reset() {
-                    this.x = Math.random() * width;
-                    this.y = Math.random() * height;
-                    this.speed = Math.random() * 2 + 0.5;
-                    this.size = Math.random() * 14 + 10;
-                    this.opacity = Math.random() * 0.5 + 0.1;
-                    if (this.type === 'cyber') {
-                        this.char = binaryChars[Math.floor(Math.random() * binaryChars.length)];
-                        this.color = '#00ff00';
-                        this.vx = 0; this.vy = this.speed;
-                    } else {
-                        this.char = mathChars[Math.floor(Math.random() * mathChars.length)];
-                        this.color = '#0000ff';
-                        this.vx = (Math.random() - 0.5) * 0.5; this.vy = -this.speed * 0.5;
-                    }
-                }
-                update() {
-                    this.x += this.vx; this.y += this.vy;
-                    if (this.type === 'cyber' && this.y > height) this.y = -20;
-                    if (this.type === 'math' && this.y < -20) this.y = height + 20;
-                    if (phase === 2) {
-                        const dx = (width / 2) - this.x;
-                        const dy = (height / 2) - this.y;
-                        this.x += dx * 0.02; this.y += dy * 0.02;
-                    }
-                }
-                draw() {
-                    ctx.fillStyle = this.color;
-                    ctx.globalAlpha = this.opacity;
-                    ctx.font = `${this.size}px monospace`;
-                    ctx.fillText(this.char, this.x, this.y);
-                    ctx.globalAlpha = 1.0;
-                }
-            }
-
-            function drawCyberGuy(x, y, isWalking) {
-                ctx.save(); ctx.translate(x, y);
-                const bounce = isWalking ? Math.sin(frame * 0.2) * 5 : 0; ctx.translate(0, bounce);
-                ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.moveTo(-25, -60); ctx.lineTo(25, -60); ctx.lineTo(35, 0); ctx.lineTo(-35, 0); ctx.fill();
-                ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -60); ctx.lineTo(0, -20); ctx.stroke();
-                ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -75, 20, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(0, -75, 22, Math.PI, 0); ctx.lineTo(22, -60); ctx.lineTo(-22, -60); ctx.fill();
-                ctx.fillStyle = '#00ff00'; ctx.shadowBlur = 10; ctx.shadowColor = '#00ff00'; ctx.fillRect(-15, -80, 30, 8); ctx.shadowBlur = 0;
-                ctx.restore();
-            }
-
-            function drawMathGirl(x, y, isWalking) {
-                ctx.save(); ctx.translate(x, y);
-                const bounce = isWalking ? Math.sin(frame * 0.2 + Math.PI) * 5 : 0; ctx.translate(0, bounce);
-                ctx.fillStyle = '#3a3a3a'; ctx.beginPath(); ctx.moveTo(-20, -30); ctx.lineTo(20, -30); ctx.lineTo(30, 10); ctx.lineTo(-30, 10); ctx.fill();
-                ctx.fillStyle = '#ff9900'; ctx.fillRect(-25, -65, 50, 40);
-                ctx.fillStyle = '#ffccaa'; ctx.beginPath(); ctx.arc(0, -80, 18, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#5a3a2a'; ctx.beginPath(); ctx.arc(0, -85, 20, Math.PI, 0); ctx.arc(-15, -80, 5, 0, Math.PI*2); ctx.arc(15, -80, 5, 0, Math.PI*2); ctx.fill();
-                ctx.restore();
-            }
-
-            function drawBackgrounds() {
-                let splitX = width / 2;
-                ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, width, height);
-                if (phase < 2) {
-                    ctx.save(); ctx.beginPath(); ctx.rect(splitX, 0, width/2, height); ctx.clip();
-                    ctx.fillStyle = '#f0f0f0'; ctx.fillRect(0, 0, width, height);
-                    ctx.strokeStyle = '#add8e6'; ctx.lineWidth = 1; const gridSize = 30;
-                    ctx.beginPath();
-                    for(let x=splitX; x<width; x+=gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-                    for(let y=0; y<height; y+=gridSize) { ctx.moveTo(splitX, y); ctx.lineTo(width, y); }
-                    ctx.stroke(); ctx.restore();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(splitX, 0); ctx.lineTo(splitX, height); ctx.stroke();
-                } else {
-                    ctx.strokeStyle = 'rgba(0, 100, 255, 0.2)'; ctx.lineWidth = 1; const gridSize = 40;
-                    ctx.beginPath(); for(let x=0; x<width; x+=gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-                    for(let y=0; y<height; y+=gridSize) { ctx.moveTo(0, y); ctx.lineTo(width, y); } ctx.stroke();
-                }
-                particles.forEach(p => {
-                    if (phase < 2) { if (p.type === 'cyber' && p.x < splitX) p.draw(); if (p.type === 'math' && p.x > splitX) p.draw(); } else { p.draw(); }
-                    p.update();
-                });
-            }
-
-            function drawEncryptionLock() {
-                if (lockScale < 1) lockScale += 0.02;
-                const cx = width / 2; const cy = height / 2 - 100;
-                ctx.save(); ctx.translate(cx, cy); ctx.scale(lockScale, lockScale);
-                ctx.shadowBlur = 30; ctx.shadowColor = '#00ffff';
-                ctx.fillStyle = '#00ccff'; ctx.fillRect(-40, 0, 80, 70);
-                ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(0, 0, 30, Math.PI, 0); ctx.stroke();
-                ctx.fillStyle = '#000'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('∑', 0, 35);
-                ctx.restore();
-            }
-
-            function animate() {
-                ctx.clearRect(0, 0, width, height);
-                drawBackgrounds();
-                const isWalking = phase === 0;
-                drawCyberGuy(cyberPos.x, cyberPos.y, isWalking);
-                drawMathGirl(mathPos.x, mathPos.y, isWalking);
-                if (phase === 0) {
-                    let moving = false;
-                    if (cyberPos.x < cyberPos.targetX) { cyberPos.x += 2; moving = true; }
-                    if (mathPos.x > mathPos.targetX) { mathPos.x -= 2; moving = true; }
-                    if (!moving) { phase = 1; setTimeout(() => { phase = 2; }, 1000); }
-                }
-                if (phase === 2) {
-                    const centerX = width / 2;
-                    if (cyberPos.x < centerX - 40) cyberPos.x += 1;
-                    if (mathPos.x > centerX + 40) mathPos.x -= 1;
-                    drawEncryptionLock();
-                }
-                frame++;
-                requestAnimationFrame(animate);
-            }
-
-            particles = [];
-            for (let i = 0; i < 50; i++) { particles.push(new Particle('cyber')); particles.push(new Particle('math')); }
-            window.addEventListener('resize', resize);
-            resize();
-            animate();
-        }
-
-        // --- GLOBAL VARIABLES FOR SLIDESHOWS ---
-        let autoSlideInterval;
-        let lightboxSlideshowInterval;
-        let isMempelaiPaused = false;
-        let isLightboxPlaying = true; // New state for Lightbox slideshow
-
-        // --- 1. MEMPELAI AUTO SLIDE LOGIC ---
-        function initAutoSlide() {
-            const carousel = document.getElementById('mempelai-carousel');
-            const section = document.getElementById('mempelai-section');
-
-            if (!carousel || !section) return;
-
-            startMempelaiSlide();
-
-            // Pause interactions
-            section.addEventListener('mouseenter', () => isMempelaiPaused = true);
-            section.addEventListener('mouseleave', () => isMempelaiPaused = false);
-            section.addEventListener('touchstart', () => isMempelaiPaused = true, {passive: true});
-            section.addEventListener('touchend', () => setTimeout(() => isMempelaiPaused = false, 2000), {passive: true});
-
-            function startMempelaiSlide() {
-                clearInterval(autoSlideInterval);
-                autoSlideInterval = setInterval(() => {
-                    if (isMempelaiPaused) return;
-
-                    const maxScroll = carousel.scrollWidth - carousel.clientWidth;
-                    const itemWidth = carousel.clientWidth; 
-
-                    if (carousel.scrollLeft >= maxScroll - 10) {
-                        carousel.scrollTo({ left: 0, behavior: 'smooth' });
-                    } else {
-                        carousel.scrollBy({ left: itemWidth, behavior: 'smooth' });
-                    }
-                }, 3000); // 3 Seconds interval
-            }
-        }
-
-        // --- 2. LIGHTBOX AUTO SWIPE (New Feature) ---
-        function startLightboxSlideshow() {
-            clearInterval(lightboxSlideshowInterval);
-            isLightboxPlaying = true;
-            const btn = document.getElementById('lightbox-play-pause');
-            const icon = btn.querySelector('i');
-            
-            if(icon) {
-                icon.classList.remove('fa-play');
-                icon.classList.add('fa-pause');
-            }
-            btn.classList.add('playing');
-
-            lightboxSlideshowInterval = setInterval(() => {
-                changeImage(1); 
-            }, 1500); // 4 Seconds interval
-        }
-
-        function stopLightboxSlideshow() {
-            clearInterval(lightboxSlideshowInterval);
-            isLightboxPlaying = false;
-            const btn = document.getElementById('lightbox-play-pause');
-            const icon = btn.querySelector('i');
-            if(icon) {
-                icon.classList.remove('fa-pause');
-                icon.classList.add('fa-play');
-            }
-             btn.classList.remove('playing');
-        }
-
-        window.toggleSlideshow = function(event) {
-            if(event) event.stopPropagation();
-            if (isLightboxPlaying) {
-                stopLightboxSlideshow();
-            } else {
-                startLightboxSlideshow();
-            }
-        }
-        
-        // --- 3D TILT LOGIC ---
-        function init3DTilt() {
-            const card = document.getElementById('tilt-card');
-            const container = document.getElementById('lock-screen');
-
-            if(!card || !container) return;
-
-            container.addEventListener('mousemove', (e) => {
-                const xAxis = (window.innerWidth / 2 - e.pageX) / 20; 
-                const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
-                card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+      // --- SCROLL OBSERVER ---
+      function initScrollObserver() {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+              }
             });
+          },
+          { threshold: 0.15 }
+        );
 
-            container.addEventListener('mouseleave', () => {
-                card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
+          observer.observe(el);
+        });
+      }
+
+      // --- ANIMATED BACKGROUND ---
+      function createBackgroundElements() {
+        const bgContainer = document.getElementById("bg-animation");
+        const mathSymbols = ["∫", "∑", "π", "√", "∞", "ƒ", "dy", "0", "1"];
+
+        for (let i = 0; i < 25; i++) {
+          const el = document.createElement("div");
+          el.classList.add("floating-symbol");
+          el.innerText =
+            mathSymbols[Math.floor(Math.random() * mathSymbols.length)];
+          el.style.left = Math.random() * 100 + "vw";
+          el.style.fontSize = Math.random() * 20 + 10 + "px";
+          el.style.animationDuration = Math.random() * 15 + 10 + "s";
+          el.style.animationDelay = Math.random() * 5 + "s";
+          bgContainer.appendChild(el);
+        }
+      }
+
+      function unlockPhone() {
+        const lockScreen = document.getElementById("lock-screen");
+        const mainApp = document.getElementById("main-app");
+        const typingStatus = document.getElementById("typing-status");
+
+        // YOUTUBE PLAY
+        if (player && typeof player.playVideo === "function") {
+          player.playVideo();
+        }
+
+        // 3D Exit Animation
+        lockScreen.style.transition =
+          "all 1s cubic-bezier(0.6, -0.28, 0.735, 0.045)";
+        lockScreen.style.transform = "scale(1.5) rotateX(20deg)";
+        lockScreen.style.opacity = "0";
+        lockScreen.style.filter = "blur(10px)";
+
+        if (typingStatus) typingStatus.innerText = "ACCESS GRANTED";
+
+        setTimeout(() => {
+          lockScreen.style.display = "none";
+          mainApp.classList.remove("hidden");
+
+          setTimeout(() => {
+            document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
+              const rect = el.getBoundingClientRect();
+              if (rect.top < window.innerHeight) el.classList.add("is-visible");
             });
-            
-            // Touch support
-            container.addEventListener('touchmove', (e) => {
-                 const touch = e.touches[0];
-                 const xAxis = (window.innerWidth / 2 - touch.pageX) / 20;
-                 const yAxis = (window.innerHeight / 2 - touch.pageY) / 20;
-                 card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-            }, {passive: true});
-             container.addEventListener('touchend', () => {
-                card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-            });
+          }, 100);
+        }, 800);
+      }
+
+      function scrollToId(id) {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }
+
+      function scrollCarousel(direction) {
+        const container = document.getElementById("mempelai-carousel");
+        if (container) {
+          const scrollAmount = container.clientWidth;
+          container.scrollBy({
+            left: direction === "right" ? scrollAmount : -scrollAmount,
+            behavior: "smooth",
+          });
         }
+      }
 
-        // --- SCROLL OBSERVER ---
-        function initScrollObserver() {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                    }
-                });
-            }, { threshold: 0.15 });
+      function startCountdown() {
+        const eventDate = new Date("Oct 20, 2026 08:00:00").getTime();
+        setInterval(() => {
+          const now = new Date().getTime();
+          const distance = eventDate - now;
+          if (distance < 0) return;
 
-            document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-                observer.observe(el);
-            });
+          const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const h = Math.floor(
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          );
+          const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+          const elD = document.getElementById("d");
+          if (elD) {
+            elD.innerText = d < 10 ? "0" + d : d;
+            document.getElementById("h").innerText = h < 10 ? "0" + h : h;
+            document.getElementById("m").innerText = m < 10 ? "0" + m : m;
+            document.getElementById("s").innerText = s < 10 ? "0" + s : s;
+          }
+        }, 1000);
+      }
+
+      function copyText(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+          showMessageBox("Nomor rekening berhasil disalin!", "success");
+        } catch (err) {
+          console.error("Failed to copy", err);
+          showMessageBox("Gagal menyalin. Silakan salin manual.", "error");
         }
+        document.body.removeChild(textarea);
+      }
 
-        // --- ANIMATED BACKGROUND ---
-        function createBackgroundElements() {
-            const bgContainer = document.getElementById('bg-animation');
-            const mathSymbols = ['∫', '∑', 'π', '√', '∞', 'ƒ', 'dy', '0', '1'];
-            
-            for (let i = 0; i < 25; i++) {
-                const el = document.createElement('div');
-                el.classList.add('floating-symbol');
-                el.innerText = mathSymbols[Math.floor(Math.random() * mathSymbols.length)];
-                el.style.left = Math.random() * 100 + 'vw';
-                el.style.fontSize = (Math.random() * 20 + 10) + 'px';
-                el.style.animationDuration = (Math.random() * 15 + 10) + 's';
-                el.style.animationDelay = Math.random() * 5 + 's';
-                bgContainer.appendChild(el);
+      function showMessageBox(message, type = "info") {
+        const msgBox = document.createElement("div");
+        msgBox.className = `fixed bottom-24 left-1/2 transform -translate-x-1/2 p-3 px-6 rounded-full text-white text-sm font-bold shadow-2xl transition-all duration-300 z-50 animate-bounce-in`;
+        msgBox.style.background =
+          type === "success" ? "rgba(0, 150, 0, 0.9)" : "rgba(200, 0, 0, 0.9)";
+        msgBox.innerText = message;
+        document.body.appendChild(msgBox);
+
+        setTimeout(() => {
+          msgBox.style.opacity = "0";
+          setTimeout(() => msgBox.remove(), 300);
+        }, 2500);
+      }
+
+      function toggleLike(icon) {
+        if (icon.classList.contains("far")) {
+          icon.classList.remove("far");
+          icon.classList.add("fas", "text-red-500", "like-animate");
+          setTimeout(() => icon.classList.remove("like-animate"), 500);
+        } else {
+          icon.classList.remove("fas", "text-red-500");
+          icon.classList.add("far");
+        }
+      }
+
+      // Lightbox Logic
+      let currentImageIndex = 0;
+      let galleryImages = [];
+
+      function openLightbox(imgElement) {
+        const allImages = document.querySelectorAll(".gallery-img");
+        galleryImages = Array.from(allImages);
+        currentImageIndex = galleryImages.indexOf(imgElement);
+        updateLightboxImage();
+        const lightbox = document.getElementById("lightbox");
+        lightbox.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+        startLightboxSlideshow();
+        setTimeout(() => {
+          document.getElementById("lightbox-img").classList.remove("scale-95");
+          document.getElementById("lightbox-img").classList.add("scale-100");
+        }, 50);
+      }
+
+      function updateLightboxImage() {
+        const img = document.getElementById("lightbox-img");
+        if (img && galleryImages[currentImageIndex]) {
+          img.style.opacity = "0.5";
+          img.style.transform = "scale(0.95)";
+          setTimeout(() => {
+            img.src = galleryImages[currentImageIndex].src;
+            img.style.opacity = "1";
+            img.style.transform = "scale(1)";
+          }, 200);
+        }
+      }
+
+      function changeImage(direction, event) {
+        if (event) event.stopPropagation();
+        currentImageIndex += direction;
+        if (currentImageIndex >= galleryImages.length) currentImageIndex = 0;
+        else if (currentImageIndex < 0)
+          currentImageIndex = galleryImages.length - 1;
+        updateLightboxImage();
+      }
+
+      function closeLightbox(event, force = false) {
+        if (
+          force ||
+          event.target.id === "lightbox" ||
+          event.target.tagName === "DIV"
+        ) {
+          const lightbox = document.getElementById("lightbox");
+          lightbox.classList.add("hidden");
+          document.body.style.overflow = "";
+          document.getElementById("lightbox-img").classList.add("scale-95");
+          stopLightboxSlideshow();
+        }
+      }
+
+      function initLightboxSwipe() {
+        const lightbox = document.getElementById("lightbox");
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        if (!lightbox) return;
+
+        lightbox.addEventListener(
+          "touchstart",
+          (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            stopLightboxSlideshow();
+          },
+          { passive: true }
+        );
+
+        lightbox.addEventListener(
+          "touchmove",
+          (e) => {
+            e.preventDefault();
+          },
+          { passive: false }
+        );
+
+        lightbox.addEventListener(
+          "touchend",
+          (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (Math.abs(touchEndX - touchStartX) > 50) {
+              changeImage(touchEndX < touchStartX ? 1 : -1);
             }
-        }
+            setTimeout(startLightboxSlideshow, 3000);
+          },
+          { passive: true }
+        );
 
-        function unlockPhone() {
-            const lockScreen = document.getElementById('lock-screen');
-            const mainApp = document.getElementById('main-app');
-            const audio = document.getElementById('bg-music');
-            const typingStatus = document.getElementById('typing-status');
-            
-            // 3D Exit Animation
-            lockScreen.style.transition = 'all 1s cubic-bezier(0.6, -0.28, 0.735, 0.045)';
-            lockScreen.style.transform = 'scale(1.5) rotateX(20deg)';
-            lockScreen.style.opacity = '0';
-            lockScreen.style.filter = 'blur(10px)';
-            
-            if(typingStatus) typingStatus.innerText = "ACCESS GRANTED";
-            
-            if(audio) {
-                audio.volume = 0.5;
-                audio.play().catch(e => console.log("Audio autoplay blocked"));
-            }
-
-            setTimeout(() => {
-                lockScreen.style.display = 'none';
-                mainApp.classList.remove('hidden');
-                
-                // Trigger animations for first items
-                setTimeout(() => {
-                   document.querySelectorAll('.reveal-on-scroll').forEach(el => {
-                       const rect = el.getBoundingClientRect();
-                       if(rect.top < window.innerHeight) el.classList.add('is-visible');
-                   });
-                }, 100);
-            }, 800);
-        }
-
-        function scrollToId(id) {
-            const el = document.getElementById(id);
-            if(el) el.scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        function scrollCarousel(direction) {
-            const container = document.getElementById('mempelai-carousel');
-            if(container) {
-                const scrollAmount = container.clientWidth;
-                container.scrollBy({ left: direction === 'right' ? scrollAmount : -scrollAmount, behavior: 'smooth' });
-            }
-        }
-
-        function startCountdown() {
-            const eventDate = new Date("Oct 20, 2026 08:00:00").getTime();
-            setInterval(() => {
-                const now = new Date().getTime();
-                const distance = eventDate - now;
-                if (distance < 0) return;
-                
-                const d = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((distance % (1000 * 60)) / 1000);
-
-                const elD = document.getElementById("d");
-                if(elD) {
-                    elD.innerText = d < 10 ? "0"+d : d;
-                    document.getElementById("h").innerText = h < 10 ? "0"+h : h;
-                    document.getElementById("m").innerText = m < 10 ? "0"+m : m;
-                    document.getElementById("s").innerText = s < 10 ? "0"+s : s;
-                }
-            }, 1000);
-        }
-
-        function copyText(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                // Custom alert message, not using window.alert()
-                showMessageBox("Nomor rekening berhasil disalin!", 'success');
-            } catch (err) {
-                console.error('Failed to copy', err);
-                showMessageBox("Gagal menyalin. Silakan salin manual.", 'error');
-            }
-            document.body.removeChild(textarea);
-        }
-
-        function showMessageBox(message, type = 'info') {
-             // Simple in-app notification simulation
-            const msgBox = document.createElement('div');
-            msgBox.className = `fixed bottom-24 left-1/2 transform -translate-x-1/2 p-3 px-6 rounded-full text-white text-sm font-bold shadow-2xl transition-all duration-300 z-50 animate-bounce-in`;
-            msgBox.style.background = type === 'success' ? 'rgba(0, 150, 0, 0.9)' : 'rgba(200, 0, 0, 0.9)';
-            msgBox.innerText = message;
-            document.body.appendChild(msgBox);
-
-            setTimeout(() => {
-                msgBox.style.opacity = '0';
-                setTimeout(() => msgBox.remove(), 300);
-            }, 2500);
-        }
-
-        function toggleLike(icon) {
-            if(icon.classList.contains('far')) {
-                icon.classList.remove('far');
-                icon.classList.add('fas', 'text-red-500', 'like-animate');
-                setTimeout(() => icon.classList.remove('like-animate'), 500);
-            } else {
-                icon.classList.remove('fas', 'text-red-500');
-                icon.classList.add('far');
-            }
-        }
-
-        // Lightbox Logic
-        let currentImageIndex = 0;
-        let galleryImages = [];
-
-        function openLightbox(imgElement) {
-            const allImages = document.querySelectorAll('.gallery-img');
-            galleryImages = Array.from(allImages);
-            currentImageIndex = galleryImages.indexOf(imgElement);
-            updateLightboxImage();
-            const lightbox = document.getElementById('lightbox');
-            lightbox.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            
-            // Start the slideshow automatically when opening
-            startLightboxSlideshow();
-
-            setTimeout(() => {
-                 document.getElementById('lightbox-img').classList.remove('scale-95');
-                 document.getElementById('lightbox-img').classList.add('scale-100');
-            }, 50);
-        }
-        
-        function updateLightboxImage() {
-            const img = document.getElementById('lightbox-img');
-            if(img && galleryImages[currentImageIndex]) {
-                img.style.opacity = '0.5';
-                img.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    img.src = galleryImages[currentImageIndex].src;
-                    img.style.opacity = '1';
-                    img.style.transform = 'scale(1)';
-                }, 200);
-            }
-        }
-
-        function changeImage(direction, event) {
-            if(event) event.stopPropagation();
-            currentImageIndex += direction;
-            if (currentImageIndex >= galleryImages.length) currentImageIndex = 0;
-            else if (currentImageIndex < 0) currentImageIndex = galleryImages.length - 1;
-            updateLightboxImage();
-        }
-        
-        function closeLightbox(event, force = false) {
-            if (force || event.target.id === 'lightbox' || event.target.tagName === 'DIV') {
-                const lightbox = document.getElementById('lightbox');
-                lightbox.classList.add('hidden');
-                document.body.style.overflow = '';
-                document.getElementById('lightbox-img').classList.add('scale-95');
-                stopLightboxSlideshow(); // Stop when closed
-            }
-        }
-
-        function initLightboxSwipe() {
-            const lightbox = document.getElementById('lightbox');
-            let touchStartX = 0;
-            let touchEndX = 0;
-
-            if(!lightbox) return;
-
-            lightbox.addEventListener('touchstart', (e) => {
-                touchStartX = e.changedTouches[0].screenX;
-                stopLightboxSlideshow(); // Pause when user interacts
-            }, {passive: true});
-            
-            lightbox.addEventListener('touchmove', (e) => {
-                // Prevent scrolling image vertically when swiping
-                e.preventDefault();
-            }, {passive: false});
-
-            lightbox.addEventListener('touchend', (e) => {
-                touchEndX = e.changedTouches[0].screenX;
-                if (Math.abs(touchEndX - touchStartX) > 50) {
-                    changeImage(touchEndX < touchStartX ? 1 : -1);
-                }
-                // Resume slideshow after a brief pause
-                setTimeout(startLightboxSlideshow, 3000); 
-            }, {passive: true});
-            
-            // Keyboard support
-            document.addEventListener('keydown', (e) => {
-                if (!lightbox.classList.contains('hidden')) {
-                    if (e.key === 'ArrowLeft') changeImage(-1);
-                    if (e.key === 'ArrowRight') changeImage(1);
-                    if (e.key === 'Escape') closeLightbox(e, true);
-                }
-            });
-        }
+        document.addEventListener("keydown", (e) => {
+          if (!lightbox.classList.contains("hidden")) {
+            if (e.key === "ArrowLeft") changeImage(-1);
+            if (e.key === "ArrowRight") changeImage(1);
+            if (e.key === "Escape") closeLightbox(e, true);
+          }
+        });
+      }
     </script>
-</body>
+  </body>
 </html>
-
-
