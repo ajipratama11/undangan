@@ -518,10 +518,15 @@
       };
 
       const INSTAGRAM_CONFIG = {
+        // URL efek AR Instagram yang diminta.
+        effectUrl: "https://www.instagram.com/ar/562640752714276/",
         // Fallback jika deep-link aplikasi tidak tersedia.
-        storyUrl: "https://www.instagram.com/stories/aji.prtmaaa/",
+        storyUrl: "https://www.instagram.com/ar/562640752714276/",
         // Deep-link untuk membuka kamera Instagram (best effort, khusus perangkat mobile).
         storyCameraDeepLink: "instagram://camera",
+        // Best-effort deep-link kamera dengan efek AR.
+        storyCameraEffectDeepLink:
+          "instagram://camera?effect_id=562640752714276",
       };
     </script>
     <!-- Hidden Player Container -->
@@ -1995,13 +2000,20 @@
         document.addEventListener("visibilitychange", onVisibilityChange);
         window.addEventListener("pagehide", onPageHide);
 
-        // Coba buka kamera story via aplikasi Instagram.
-        window.location.href = INSTAGRAM_CONFIG.storyCameraDeepLink;
+        // Coba buka kamera story dengan efek AR terlebih dahulu.
+        window.location.href = INSTAGRAM_CONFIG.storyCameraEffectDeepLink;
 
-        // Jika gagal membuka app, arahkan ke fallback web Instagram.
+        // Fallback tahap 1: kamera Instagram biasa.
         setTimeout(() => {
           if (!appOpened) {
-            window.location.href = INSTAGRAM_CONFIG.storyUrl;
+            window.location.href = INSTAGRAM_CONFIG.storyCameraDeepLink;
+          }
+        }, 500);
+
+        // Fallback tahap 2: halaman efek AR di web Instagram.
+        setTimeout(() => {
+          if (!appOpened) {
+            window.location.href = INSTAGRAM_CONFIG.effectUrl;
           }
           cleanupListeners();
         }, 1200);
