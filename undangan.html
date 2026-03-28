@@ -109,6 +109,13 @@
             if (commentCount)
               commentCount.innerText = `View all ${snapshot.docs.length} wishes`;
 
+            const wishBadge = document.getElementById("wish-badge");
+            if (wishBadge) {
+              const count = snapshot.docs.length;
+              wishBadge.innerText = count > 99 ? "99+" : count;
+              wishBadge.style.display = count > 0 ? "inline-block" : "none";
+            }
+
             snapshot.forEach((doc) => {
               const data = doc.data();
               const div = document.createElement("div");
@@ -704,16 +711,22 @@
           <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
         </div>
         <div class="flex space-x-5 text-white">
-          <i
-            class="far fa-heart text-xl hover:text-red-500 transition-colors cursor-pointer"
-          ></i>
-          <div class="relative cursor-pointer">
+          <span class="js-like-wrap inline-flex items-center gap-1.5">
+            <i
+              class="far fa-heart js-like-heart text-xl hover:text-red-500 transition-colors cursor-pointer"
+              onclick="toggleLike(this)"
+            ></i>
+            <span class="js-like-count text-[11px] font-mono text-gray-300">0</span>
+          </span>
+          <div class="relative cursor-pointer" onclick="document.getElementById('post-comments').scrollIntoView({behavior:'smooth'})">
             <i
               class="far fa-paper-plane text-xl transform -rotate-12 hover:scale-110 transition-transform"
             ></i>
             <span
+              id="wish-badge"
               class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 rounded-full animate-bounce"
-              >1</span
+              style="display:none"
+              >0</span
             >
           </div>
         </div>
@@ -873,9 +886,9 @@
             class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-t from-black via-transparent to-black/30"
           >
             <div
-              class="border border-green-500 px-3 py-1 rounded mb-4 backdrop-blur-sm"
+              class="border-2 border-red-300 px-3 py-1 rounded mb-4 backdrop-blur-sm bg-black/40"
             >
-              <p class="font-code text-green-500 text-xs tracking-widest">
+              <p class="font-code text-red-300 text-xs tracking-widest drop-shadow-[0_0_6px_rgba(252,165,165,0.9)]">
                 ACCESS GRANTED
               </p>
             </div>
@@ -885,7 +898,7 @@
               Aji & Yesi
             </h1>
             <p
-              class="text-yellow-500 font-code text-xs tracking-widest uppercase mt-2"
+              class="text-yellow-300 font-code text-xs tracking-widest uppercase mt-2 drop-shadow-[0_0_6px_rgba(253,224,71,0.9)]"
             >
               30 Mei 2026 & 6 Juni 2026 
             </p>
@@ -893,15 +906,19 @@
         </div>
         <div class="p-4">
           <div class="flex space-x-4 text-2xl text-white mb-3">
-            <i
-              class="far fa-heart cursor-pointer hover:text-red-500 transition-colors"
-              onclick="toggleLike(this)"
-            ></i>
+            <span class="js-like-wrap inline-flex items-center gap-1.5">
+              <i
+                class="far fa-heart js-like-heart cursor-pointer hover:text-red-500 transition-colors"
+                onclick="toggleLike(this)"
+              ></i>
+              <span class="js-like-count text-xs font-mono text-gray-300">0</span>
+            </span>
             <i
               class="far fa-comment cursor-pointer hover:text-blue-400 transition-colors"
             ></i>
             <i
               class="far fa-paper-plane cursor-pointer hover:text-green-400 transition-colors"
+              onclick="document.getElementById('post-comments').scrollIntoView({behavior:'smooth'})"
             ></i>
           </div>
           <p class="text-sm font-bold text-white">
@@ -1814,6 +1831,7 @@
           if (inputName) inputName.value = cleanName;
         }
 
+        initLikeCounts();
         startCountdown();
         startNgunduhCountdown();
         initLightboxSwipe();
@@ -2211,14 +2229,60 @@
         }, 2500);
       }
 
+      function formatLikeCount(totalLikes) {
+        if (totalLikes >= 1000) {
+          return `${(totalLikes / 1000).toFixed(1).replace(".", ",")}K`;
+        }
+        return `${totalLikes}`;
+      }
+
+      function initLikeCounts() {
+        const usedCounts = new Set();
+        const hearts = document.querySelectorAll(".js-like-heart");
+
+        hearts.forEach((heartIcon) => {
+          const likeWrap = heartIcon.closest(".js-like-wrap");
+          const likeCount = likeWrap
+            ? likeWrap.querySelector(".js-like-count")
+            : null;
+
+          if (!likeCount) return;
+
+          let randomCount = 0;
+          do {
+            randomCount = Math.floor(Math.random() * 8000) + 1000;
+          } while (usedCounts.has(randomCount));
+
+          usedCounts.add(randomCount);
+          likeCount.dataset.count = String(randomCount);
+          likeCount.innerText = formatLikeCount(randomCount);
+        });
+      }
+
       function toggleLike(icon) {
+        const likeWrap = icon.closest(".js-like-wrap");
+        const likeCount = likeWrap ? likeWrap.querySelector(".js-like-count") : null;
+        let totalLikes = likeCount
+          ? parseInt(likeCount.dataset.count || "0", 10)
+          : 0;
+
         if (icon.classList.contains("far")) {
           icon.classList.remove("far");
           icon.classList.add("fas", "text-red-500", "like-animate");
+          totalLikes += 1;
+          if (likeCount) {
+            likeCount.dataset.count = String(totalLikes);
+            likeCount.innerText = formatLikeCount(totalLikes);
+          }
           setTimeout(() => icon.classList.remove("like-animate"), 500);
         } else {
           icon.classList.remove("fas", "text-red-500");
           icon.classList.add("far");
+          totalLikes = Math.max(0, totalLikes - 1);
+          if (likeCount) {
+            likeCount.dataset.count = String(totalLikes);
+            likeCount.innerText = formatLikeCount(totalLikes);
+          }
         }
       }
 
